@@ -1,0 +1,9 @@
+# log
+rich
+
+# notebook
+jupyter
+
+# scRNA-seq tools
+scanpy
+
