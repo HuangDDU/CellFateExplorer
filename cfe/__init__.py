@@ -5,6 +5,7 @@ from . import pipeline
 from . import data
 from . import method
 from . import plot
+from . import util
 
 
 logo = """
