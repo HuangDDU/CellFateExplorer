@@ -4,7 +4,7 @@ class CellFateExplorerConfig:
         self.plot_format = "pdf"
 
         # backend settings
-        self.backend = None
+        self.backend = "dynverse_docker"  # ["python_function", "cfe_docker", "dynverse_docker"]
 
     def __getitem__(self, key):
         if hasattr(self, key):

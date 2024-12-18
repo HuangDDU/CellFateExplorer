@@ -7,3 +7,7 @@ rich
 # scRNA-seq tools
 scanpy
 
+# docker
+docker==7.1.0
+
+rpy2==3.3.0

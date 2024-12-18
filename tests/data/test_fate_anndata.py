@@ -1,26 +1,71 @@
 import pytest
 import cfe
 
+import os
+from scipy.sparse import csc_matrix
+import numpy as np
 import pandas as pd
 import anndata as ad
+import scanpy as sc
 
 from ..test_util import compare_dataframes
 
 
+def setup_method_data():
+    counts = np.array([
+        [0, 10],
+        [8, 10],
+        [12, 12],
+        [20, 20],
+        [15, 16],
+        [22, 20],
+    ])
+
+    counts = csc_matrix(counts)
+
+    fadata = cfe.data.FateAnnData(X=counts)
+    fadata.obs.index = ["a", "b", "c", "d", "e", "f"]
+    fadata.obs["clusters"] = [1, 1, 2, 2, 2, 3]
+    fadata.var.index = ["g1", "g2"]
+    fadata.layers["counts"] = counts
+    fadata.layers["expression"] = counts.copy()
+    fadata.obsm["X_emb"] = counts.copy()
+
+    return fadata
+
+
 class TestFateAnnData:
     def setup_method(self):
-        self.fadata = cfe.data.FateAnnData()
+        self.fadata = setup_method_data()
 
-    def test_parent_class(self):
+    def test_init(self):
         assert isinstance(self.fadata, ad.AnnData)
+        assert self.fadata.shape == (6, 2)
+        assert "cfe" in self.fadata.uns.keys()
 
+    def test_from_anndata(self):
+        # data source: https://github.com/theislab/cellrank_reproducibility/blob/master/data/dyngen_simulated_data/bifurcating.h5ad
+        adata = sc.read_h5ad(f"{os.path.dirname(__file__)}/bifurcating.h5ad")
+        fadata = cfe.data.FateAnnData.from_anndata(adata)
+        assert not fadata.id is None
+
+    def test_get_item(self):
+        pass
+    
     def test_add_prior_information(self):
-        self.fadata.add_prior_information()
+        self.fadata.add_prior_information(start_id="a", group_id=self.fadata.obs["clusters"].tolist())
+        self.fadata.add_prior_information(end_id="f")
+        assert set(["start_id", "group_id", "end_id"]) <= set(self.fadata.prior_information.keys())
 
     def test_add_trajectory(self):
         from .test_fate_milestone_wrapper import setup_method_data
         milestone_wrapper = setup_method_data()
-        self.fadata.add_trajectory(milestone_wrapper)
+        self.fadata.add_trajectory(
+            milestone_network=milestone_wrapper.milestone_network,
+            divergence_regions=milestone_wrapper.divergence_regions,
+            milestone_percentages=milestone_wrapper.milestone_percentages,
+            progressions=milestone_wrapper.progressions
+        )
         assert self.fadata.is_wrapped_with_trajectory
 
     def test_add_waypoints(self):

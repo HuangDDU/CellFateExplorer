@@ -17,7 +17,10 @@ class MilestoneWrapper(FateWrapper):
         self.milestone_network = milestone_network
         self.id_list = milestone_network[["from", "to"]].stack().unique().tolist()
 
-        self.divergence_regions = divergence_regions
+        if divergence_regions is None:
+            self.divergence_regions = pd.DataFrame(columns=["divergence_id", "milestone_id", "is_start"])
+        else:
+            self.divergence_regions = divergence_regions
 
         # choose milestone_percentages or progressions
         if (milestone_percentages is None) == (progressions is None):
@@ -41,7 +44,10 @@ class MilestoneWrapper(FateWrapper):
         milestone_network: pd.DataFrame,
         milestone_percentages: pd.DataFrame
     ):
-        """ milestone_percentages -> progressions, "add_trajectory" test case"""
+        """ 
+        milestone_percentages -> progressions, "add_trajectory" test case
+        ref: pydynverse/wrap/convert_milestone_percentages_to_progressions.convert_milestone_percentages_to_progressions
+        """
         # part1: for cells that have 2 or more milestones
         # first merge based on "to" key result in many invalid cell_id-form relationship
         df1 = pd.merge(milestone_network, milestone_percentages, left_on="to", right_on="milestone_id")
@@ -70,6 +76,8 @@ class MilestoneWrapper(FateWrapper):
         """
         progressions -> milestone_percentages, "add_branch_trajectory" test case.
         resuse for "wrap_add_waypoint", written as the static method of MilestoneWrapper Class
+
+        ref: pydynverse/wrap/convert_progressions_to_milestone_percentages.convert_progressions_to_milestone_percentages
         """
         # self loops
         selfs = progressions[progressions["from"] == progressions["to"]]
@@ -107,11 +115,20 @@ class MilestoneWrapper(FateWrapper):
         self.classify_milestone_network()
 
     def classify_milestone_network(self):
-        """ milestone network classification"""
+        """ 
+        milestone network classification
+
+        ref: pydynverse/wrap/wrap_add_trajectory.changed_topology
+        """
         # TODO: PyDynverse and CFE implementation
         self.milestone_network_class = "N"
         self.directed = False
 
     def gather_cells_at_milestones(self):
+        """
+        move cells to their nearest milestone
+
+        ref: pydynverse/wrap/wrap_gather_cells_at_milestones.gather_cells_at_milestones
+        """
         # gather all cells to their nearest milestone
         pass

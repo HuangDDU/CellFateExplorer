@@ -19,15 +19,17 @@ class WaypointWrapper(FateWrapper):
         self.milestone_wrapper = milestone_wrapper
 
     def pipeline(self):
-        self.select_waypoints()
+        self._select_waypoints()
 
-    def select_waypoints(
+    def _select_waypoints(
             self,
             n_waypoints=200,
-            transform=lambda x: x,  # edge length transform function
+            transform=lambda x: x, # edge length transform function
             resolution=None):
         """
         select waypoints base milestone network edge length and resolution parameter
+        
+        ref: pydynverse/wrap/wrap_add_waypoints.select_waypoints
         """
         mr = self.milestone_wrapper
 
@@ -44,7 +46,7 @@ class WaypointWrapper(FateWrapper):
                 case 1:
                     return f"MILESTONE_END_W{row['from']}_{row['to']}"
                 case _:
-                    return f"W{row.name+1}"  # 这里与R保持一致，W从1开始算
+                    return f"W{row.name+1}"  # waypoint id start from 1
         waypoint_progressions = mr.milestone_network.copy()
         waypoint_progressions["percentage"] = waypoint_progressions["length"].apply(lambda x: [i/x for i in np.arange(0, x, resolution)] + [1])
         waypoint_progressions = waypoint_progressions[["from", "to", "percentage"]]
@@ -65,8 +67,7 @@ class WaypointWrapper(FateWrapper):
         ).rename(columns={"cell_id": "waypoint_id"})
         self.waypoint_milestone_percentages = waypoint_milestone_percentages
 
-        self.waypoint_geodesic_distances = self.calculate_geodesic_distances().loc[waypoint_progressions["waypoint_id"]]
-        # self.waypoint_geodesic_distances = self.calculate_geodesic_distances()
+        self.waypoint_geodesic_distances = self._calculate_geodesic_distances().loc[waypoint_progressions["waypoint_id"]]
 
         waypoint_network = waypoint_progressions\
             .sort_values(by=["from", "to", "percentage"])\
@@ -86,12 +87,14 @@ class WaypointWrapper(FateWrapper):
         waypoints = waypoints[["waypoint_id", "milestone_id"]]
         self.waypoints = waypoints
 
-    def calculate_geodesic_distances(self):
+    def _calculate_geodesic_distances(self):
         """
         calculate geodesic distances between cells and waypoints/milestones
         overall idea:
             1. calculate the full path of the target point within each divergent region separately
             2. merge and calculate the distance on the overall graph
+
+        ref: PyDynverse/pydynverse/wrap/calculate_geodesic_distances.py
         """
         # attribute in the MilestoneWrapper
         cell_id_list = self.milestone_wrapper.cell_id_list

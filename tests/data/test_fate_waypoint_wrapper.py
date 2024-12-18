@@ -39,7 +39,7 @@ class TestWaypointWrapper:
 
     def test_select_waypoints(self):
         ww = self.waypoint_wrapper
-        ww.select_waypoints(resolution=1)
+        ww._select_waypoints(resolution=1)
 
         # 预期构造结果
         expected_waypoint_milestone_percentages = pd.DataFrame(

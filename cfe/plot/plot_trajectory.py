@@ -1,13 +1,117 @@
+from scipy.stats import norm
+import numpy as np
+import pandas as pd
+
+import scanpy as sc
+
 from .._logging import logger
-from ..data import FateAnnData
+from ..data import FateAnnData, WaypointWrapper
 from ..method import FateMethod
 
 
 def plot_trajectory(
-        fdata: FateAnnData = None,
-        fmethod: FateMethod = None,
-        ax=None,
+        fadata: FateAnnData,
+        basis: str = "umap",
+        size_milestones=30,
+        size_transitions=2,
+        color_trajectory=None,
+        ** sc_pl_embedding_kwargs
 ):
-    logger.debug("plot_trajectory")
+    """
+    ref: pydynverse/plot/plot_dimred.plot_dimred
+    """
     # NOTE: a fdata, a method
     # TODO: a fdata, many methods
+    logger.debug("plot_trajectory")
+
+    # base embedding
+    ax = sc.pl.embedding(fadata, basis=basis, **sc_pl_embedding_kwargs, show=False)
+
+   # project waypoint to embedding space
+    cell_positions = pd.DataFrame(data=fadata.obsm[f"X_{basis}"][:, :2], columns=["comp_1", "comp_2"])
+    cell_positions["cell_id"] = fadata.obs.index
+    waypoint_projection = project_waypoints(fadata, cell_positions)
+
+   # plot waypoint to show trajectory
+    wp_segments = waypoint_projection["segments"]  # projection to trajectory
+    milestone_positions = wp_segments[wp_segments["milestone_id"].apply(lambda x: not x is None)]  # only save waypoint on mileston
+
+    # plot waypoint curve
+    ax.scatter(milestone_positions["comp_1"], milestone_positions["comp_2"], c="black", s=size_milestones)  # waypoint scatter
+    # Connect waypoint scatter points into a curve
+    for g in wp_segments["group"].unique():
+        wp_segments_g = wp_segments[wp_segments["group"] == g]
+        ax.plot(wp_segments_g["comp_1"], wp_segments_g["comp_2"], c="black", linewidth=size_transitions)
+
+    # plot waypoint
+    if fadata.milestone_wrapper["milestone_network"]["directed"].any():
+        def get_arrow_df(group):
+            group = group.sort_values(by="percentage")
+            start = group.iloc[0]
+            end = group.iloc[-1]
+            s = pd.Series({
+                "x": start["comp_1"],
+                "y": start["comp_2"],
+                "dx": end["comp_1"]-start["comp_1"],
+                "dy": end["comp_2"]-start["comp_2"]}
+            )
+            return s
+        arrow_df = wp_segments[wp_segments["arrow"]].groupby("group").apply(get_arrow_df)
+        ax.quiver(arrow_df["x"], arrow_df["y"], arrow_df["dx"], arrow_df["dy"])
+        if color_trajectory is None:
+            # TODO: add color to trajectory
+            pass
+        else:
+            pass
+
+
+def project_waypoints(
+    fadata: FateAnnData,
+    cell_positions: pd.DataFrame,
+    trajectory_projection_sd: float = None
+):
+    """
+    ref: pydynverse/plot/project_waypoints.project_waypoints_coloured
+    """
+    # if waypoints is None:
+    # select waypoint
+    logger.debug("add waypoints")
+    milestone_wrapper = fadata.milestone_wrapper
+    fadata.add_waypoints(milestone_wrapper)
+    waypoints = fadata.waypoint_wrapper
+    logger.debug(f"add waypoints shape is {waypoints['waypoint_geodesic_distances'].shape}, finished!")
+
+    if trajectory_projection_sd is None:
+        trajectory_projection_sd = sum(milestone_wrapper["milestone_network"]["length"])*0.05
+
+    wps = waypoints
+    # wps["waypoint_network"] = wps["waypoint_network"].rename({"from_milestone_id": "milestone_id_from", "to_milestone_id": "milestone_id_to"})
+
+    # calculate wayppoint embedding based geodesic distances and gaussian kernel
+    # calculate weight
+    weights = norm.pdf(wps["waypoint_geodesic_distances"], scale=trajectory_projection_sd)  # gaussian kernel
+    weights /= weights.sum(axis=1, keepdims=True)  # weight normalization
+    # get cell embedding
+    positions = cell_positions[["cell_id", "comp_1", "comp_2"]].set_index("cell_id")
+    positions = positions.loc[wps["waypoint_geodesic_distances"].columns]
+    # calcate waypoint embedding base on weight
+    result = np.dot(weights, positions)
+    result_df = pd.DataFrame(result, columns=["comp_1", "comp_2"])
+    result_df["waypoint_id"] = wps["waypoint_geodesic_distances"].index
+    # merge waypoint embedding
+    waypoint_positions = pd.merge(result_df, wps["waypoints"], on="waypoint_id")
+
+    # merge waypoint progressions
+    segments = pd.merge(waypoint_positions, wps["waypoint_progressions"], on="waypoint_id")
+    segments["group"] = segments.apply(lambda x: f"{x['from']}---{x['to']}", axis=1)
+
+    def calculate_closest_and_arrow(group):
+        # choose the middle waypoint of a milestone network edege, where the percentage is closest to 0.5
+        closest_index = (group["percentage"] - 0.5).abs().idxmin()
+        group["arrow"] = (group.index == closest_index) | (group.index == closest_index + 1)  # arrow column
+        return group
+    segments = segments.groupby("group").apply(calculate_closest_and_arrow).reset_index(drop=True)
+
+    waypoint_projection = {"segments": segments}
+
+    return waypoint_projection
