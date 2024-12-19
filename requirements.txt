@@ -1,13 +1,15 @@
 # log
 rich
+yaml
+rpy2==3.3.0
+docker==7.1.0
+tqdm
+networkx
+scikit-learn
+scanpy 
+scvelo
 
 # # notebook
 # jupyter
 
-# scRNA-seq tools
-scanpy
 
-# docker
-docker==7.1.0
-
-rpy2==3.3.0
