@@ -13,18 +13,6 @@ class Backend(ABC):
     def load_backend(self):
         pass
 
-    # @abstractmethod
-    # def preprocess(self, inputs, tmp_wd):
-    #     pass
-
-    # @abstractmethod
-    # def execute(self, tmp_wd):
-    #     pass
-
-    # @abstractmethod
-    # def postprocess(self):
-    #     pass
-
     @abstractmethod
     def run(self):
         pass

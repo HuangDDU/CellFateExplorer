@@ -5,7 +5,7 @@ from .fate_backend import Backend
 # CfeDockerBackend: specific implementation of abstract Backend class using CFE Docker..
 class CFEDockerBackend(Backend):
     def __init__(self, method_name):
-        logger.debug("FunctionBackend __init__")
+        logger.debug("CFEDockerBackend __init__")
 
     def load_backend(self):
         # load docker image

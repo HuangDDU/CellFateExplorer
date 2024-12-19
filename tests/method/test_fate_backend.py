@@ -1,6 +1,7 @@
 import pytest
 import cfe
 
+import os
 import yaml
 
 
@@ -12,7 +13,7 @@ class TestBackend:
 class TestDefinition():
 
     def setup_method(self):
-        definition_yaml_filename = "/home/huang/PyCode/scRNA/CellFateExplorer/CellFateExplorer/cfe/method/definition/cf_paga.yml"
+        definition_yaml_filename = f"{os.path.dirname(__file__)}/../../cfe/method/definition/cf_paga.yml"
         with open(definition_yaml_filename, 'r') as file:
             definition_raw = yaml.safe_load(file)
         self.definition = cfe.method.Definition(definition_raw)
@@ -31,7 +32,7 @@ class TestDefinition():
         # test keys
         definition_dict = dict(definition)
         attribute_name_list = ["method", "wrapper", "container", "package", "manuscript", "parameters"]
-        assert set(attribute_name_list).issubset(set(definition_dict.keys())), f"{attribute_name_list} should be the keys of the dict: {mw_dict}"
+        assert set(attribute_name_list).issubset(set(definition_dict.keys())), f"{attribute_name_list} should be the keys of the dict: {definition_dict}"
 
 
 if __name__ == "__main__":
