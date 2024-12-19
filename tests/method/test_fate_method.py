@@ -5,7 +5,7 @@ import cfe
 class TestFateMethod():
 
     def setup_method(self):
-        TestFateMethod
+        cfe
     def test_init(self):
         pass
     def test_choose_backend(self):

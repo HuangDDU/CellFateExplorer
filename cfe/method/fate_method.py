@@ -1,6 +1,5 @@
 import os.path
 import yaml
-import tempfile
 
 from .._logging import logger
 from .._settings import settings
