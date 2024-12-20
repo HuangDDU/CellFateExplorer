@@ -1,4 +1,3 @@
-from typing import Optional, Literal
 import numpy as np
 import pandas as pd
 import networkx as nx
@@ -24,18 +23,17 @@ class WaypointWrapper(FateWrapper):
     def _select_waypoints(
             self,
             n_waypoints=200,
-            transform=lambda x: x, # edge length transform function
+            transform=lambda x: x,  # edge length transform function
             resolution=None):
         """
         select waypoints base milestone network edge length and resolution parameter
-        
         ref: pydynverse/wrap/wrap_add_waypoints.select_waypoints
         """
         mr = self.milestone_wrapper
 
         if resolution is None:
             # compute resolution automaticall based on the sum of milestone network length after transformation
-            resolution = mr.milestone_network["length"].apply(lambda x: transform(x)).sum()/n_waypoints
+            resolution = mr.milestone_network["length"].apply(lambda x: transform(x)).sum() / n_waypoints
 
         # percentage list construction and explode
         def waypoint_id_from_progressions_row(row):
@@ -48,7 +46,7 @@ class WaypointWrapper(FateWrapper):
                 case _:
                     return f"W{row.name+1}"  # waypoint id start from 1
         waypoint_progressions = mr.milestone_network.copy()
-        waypoint_progressions["percentage"] = waypoint_progressions["length"].apply(lambda x: [i/x for i in np.arange(0, x, resolution)] + [1])
+        waypoint_progressions["percentage"] = waypoint_progressions["length"].apply(lambda x: [i / x for i in np.arange(0, x, resolution)] + [1])
         waypoint_progressions = waypoint_progressions[["from", "to", "percentage"]]
         waypoint_progressions = waypoint_progressions.explode("percentage").reset_index(drop=True)
         waypoint_progressions["percentage"] = waypoint_progressions["percentage"].astype("float")
@@ -187,7 +185,7 @@ class WaypointWrapper(FateWrapper):
 
             distances = pairwise_distances(pct_mat, pct_mat.loc[wp_cells+tent], metric="manhattan")
             distances = pd.DataFrame(index=pct_mat.index, columns=wp_cells+tent, data=distances)
-            distances = distances.reset_index().melt(id_vars="from", var_name="to",  value_name="length")  # 宽数据转化为长数据
+            distances = distances.reset_index().melt(id_vars="from", var_name="to", value_name="length")  # 宽数据转化为长数据
             distances = distances[~(distances["from"] == distances["to"])]
             return distances
 
@@ -208,6 +206,7 @@ class WaypointWrapper(FateWrapper):
             mode = "in"
         else:
             mode = "all"
+        mode
 
         # 调用dijkstra计算, 计算waypoint和cell之间的
         out = pd.DataFrame(np.zeros((len(waypoint_id_list), len(cell_id_list))), index=waypoint_id_list, columns=cell_id_list)

@@ -62,7 +62,7 @@ class FateAnnData(ad.AnnData):
         progressions: pd.DataFrame = None,
     ):
         """
-        ref: 
+        create MilestoneWrapper object
         """
         logger.debug("FateAnnData add_trajectory")
 
@@ -79,7 +79,7 @@ class FateAnnData(ad.AnnData):
 
     def add_waypoints(self, milestone_wrapper: MilestoneWrapper):
         """
-        ref: 
+        create WaypointWrapper object
         """
         logger.debug("FateAnnData add_waypoints")
 

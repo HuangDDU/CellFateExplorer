@@ -16,10 +16,10 @@ class TestWaypointWrapper:
         ww = self.waypoint_wrapper
 
         # test __contains__
-        assert "id" in ww, f"id should in mw"
+        assert "id" in ww, "id should in mw"
 
         # test __getitem__
-        assert ww["id"] == ww.id, f"mw['id'] should be the same as mw.id"
+        assert ww["id"] == ww.id, "mw['id'] should be the same as mw.id"
 
         # test keys
         ww_dict = dict(ww)
@@ -35,7 +35,6 @@ class TestWaypointWrapper:
         assert not ww.waypoint_geodesic_distances is None
         assert not ww.waypoint_network is None
         assert not ww.waypoints is None
-
 
     def test_select_waypoints(self):
         ww = self.waypoint_wrapper

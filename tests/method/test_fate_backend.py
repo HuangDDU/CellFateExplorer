@@ -27,10 +27,10 @@ class TestDefinition():
         definition["run"]
 
         # test __contains__
-        assert "method" in definition, f"method should in definition"
+        assert "method" in definition, "method should in definition"
 
         # test __getitem__
-        assert definition["method"] == definition.method, f"definition['method'] should be the same as definition.method"
+        assert definition["method"] == definition.method, "definition['method'] should be the same as definition.method"
 
         # test keys
         definition_dict = dict(definition)

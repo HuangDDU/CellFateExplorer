@@ -44,7 +44,7 @@ class MilestoneWrapper(FateWrapper):
         milestone_network: pd.DataFrame,
         milestone_percentages: pd.DataFrame
     ):
-        """ 
+        """
         milestone_percentages -> progressions, "add_trajectory" test case
         ref: pydynverse/wrap/convert_milestone_percentages_to_progressions.convert_milestone_percentages_to_progressions
         """
@@ -101,7 +101,7 @@ class MilestoneWrapper(FateWrapper):
         if (self.milestone_percentages is None) == (self.progressions is None):
             if not self.milestone_percentages is None:
                 logger.warning("Both milestone_percentages and progressions are given, will only use progressions")
-                milestone_percentages = None
+                self.milestone_percentages = None
             else:
                 raise ValueError("Exactly one of milestone_percentages or progressions, must be defined, the other must be None")
 
@@ -115,7 +115,7 @@ class MilestoneWrapper(FateWrapper):
         self.classify_milestone_network()
 
     def classify_milestone_network(self):
-        """ 
+        """
         milestone network classification
 
         ref: pydynverse/wrap/wrap_add_trajectory.changed_topology

@@ -4,6 +4,7 @@ import cfe
 import os.path
 import scanpy as sc
 
+
 class TestFateMethod():
 
     def setup_method(self):
@@ -17,18 +18,17 @@ class TestFateMethod():
 
     def test_choose_backend(self):
         fate_method = self.fate_method
-        
+
         fate_method.choose_backend(backend="python_function")
-        assert  fate_method.backend == "python_function" and isinstance(fate_method.method_backend, cfe.method.FunctionBackend)
-        
+        assert fate_method.backend == "python_function" and isinstance(fate_method.method_backend, cfe.method.FunctionBackend)
+
         self.fate_method.choose_backend(backend="cfe_docker")
-        assert  fate_method.backend == "cfe_docker" and isinstance(fate_method.method_backend, cfe.method.CFEDockerBackend)
-        
+        assert fate_method.backend == "cfe_docker" and isinstance(fate_method.method_backend, cfe.method.CFEDockerBackend)
+
         if cfe.settings.r_available:
             # test dynverse docker when R is available
             self.fate_method.choose_backend(backend="dynverse_docker")
-            assert  fate_method.backend == "dynverse_docker" and isinstance(fate_method.method_backend, cfe.method.DynverseDockerBackend)
-
+            assert fate_method.backend == "dynverse_docker" and isinstance(fate_method.method_backend, cfe.method.DynverseDockerBackend)
 
     def test_infer_trajectory(self):
         # notebook/quickstart_paga.ipynb

@@ -58,10 +58,10 @@ class TestMilestoneWrapper:
         mw = self.milestone_wrapper
 
         # test __contains__
-        assert "id" in mw, f"id should in mw"
+        assert "id" in mw, "id should in mw"
 
         # test __getitem__
-        assert mw["id"] == mw.id, f"mw['id'] should be the same as mw.id"
+        assert mw["id"] == mw.id, "mw['id'] should be the same as mw.id"
 
         # test keys
         mw_dict = dict(mw)

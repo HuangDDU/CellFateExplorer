@@ -5,11 +5,11 @@ import rpy2.rinterface as rinterface
 from rpy2.robjects import pandas2ri
 
 
-from scipy.sparse import csr_matrix, csc_matrix
-import pandas as pd
-
+from scipy.sparse import csc_matrix
 
 # 各种装饰器定义了R到python的数据转换策略
+
+
 @ro.conversion.rpy2py.register(rinterface.SexpS4)
 def convert_sparse(obj):
     if "dgCMatrix" in obj.rclass:
