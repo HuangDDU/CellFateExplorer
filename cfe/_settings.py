@@ -17,6 +17,7 @@ class CellFateExplorerConfig:
         except:
             self.r_available = False
             logger.warning("R not available. You cannot use dynverse backend.")
+        self.r_available = True
 
     def __getitem__(self, key):
         if hasattr(self, key):
