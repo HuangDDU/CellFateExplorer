@@ -11,13 +11,14 @@ import pandas as pd
 import rpy2.robjects as ro
 
 from .._logging import logger
-from .fate_backend import Backend, Definition
+from .fate_backend import DockerBackEnd, Definition
 
 
 # DockerBackend: specific implementation of abstract Backend class using Dynverse Docker.
-class DynverseDockerBackend(Backend):
+class DynverseDockerBackend(DockerBackEnd):
     def __init__(self, image_id):
         # logger.debug("DockerBackend __init__")
+
         self.image_id = image_id
         self.load_backend()
 
@@ -118,57 +119,57 @@ class DynverseDockerBackend(Backend):
             # postprocess
             self.postprocess(fadata, trajectory)
 
-    def _pull_image_with_progress(self, image_name, tag=None, logger_func=print):
-        """
-        pull dynverse docker image  and show progress bar with tqdm
+    # def _pull_image_with_progress(self, image_name, tag=None, logger_func=print):
+    #     """
+    #     pull dynverse docker image  and show progress bar with tqdm
 
-        ref: pydynverse.wrap.method_create_ti_method_container.pull_image_with_progress
-        """
-        if logger_func is None:
-            # default logger function is print
-            logger_func = print
-        client = docker.from_env()
-        try:
-            logger_func(f"Try to pull image {image_name}:{tag}...\n")
-            api_client = docker.APIClient(base_url="unix://var/run/docker.sock")  # stream docker clinet can get log
-            pull_logs = api_client.pull(repository=image_name, tag=tag, stream=True, decode=True)  # pull image
-            progress_bars = {}  # initialize progress bar, store every layer's progress bar
-            for log in pull_logs:
-                # pull logs format is JSON, need parse
-                if "status" in log:
-                    status = log["status"]
-                    layer_id = log.get("id", None)
-                    progress_detail = log.get("progressDetail", {})
-                    current = progress_detail.get("current", 0)  # finished bytes
-                    total = progress_detail.get("total", 0)  # total bytes
-                    # layer_id and total update progress bar
-                    if layer_id and total:
-                        if layer_id not in progress_bars:
-                            # new propgress bar
-                            progress_bars[layer_id] = tqdm(
-                                total=total,
-                                desc=f"Layer {layer_id[:12]}",
-                                unit="B",
-                                unit_scale=True,
-                                unit_divisor=1024
-                            )
-                        progress_bars[layer_id].n = current
-                        progress_bars[layer_id].refresh()
-                    # no progression information, show status
-                    elif layer_id:
-                        logger_func(f"{status} {layer_id}".strip())
-                    else:
-                        logger_func(f"{status}".strip())
-            # close all progress bars
-            for bar in progress_bars.values():
-                bar.close()
-            logger_func(f"Pull {image_name}:{tag} finish")
-        except docker.errors.APIError as e:
-            logger_func(f"Pull image failed: {e}")
-        except Exception as e:
-            logger_func(f"Other Error: {e}")
-        finally:
-            client.close()
+    #     ref: pydynverse.wrap.method_create_ti_method_container.pull_image_with_progress
+    #     """
+    #     if logger_func is None:
+    #         # default logger function is print
+    #         logger_func = print
+    #     client = docker.from_env()
+    #     try:
+    #         logger_func(f"Try to pull image {image_name}:{tag}...\n")
+    #         api_client = docker.APIClient(base_url="unix://var/run/docker.sock")  # stream docker clinet can get log
+    #         pull_logs = api_client.pull(repository=image_name, tag=tag, stream=True, decode=True)  # pull image
+    #         progress_bars = {}  # initialize progress bar, store every layer's progress bar
+    #         for log in pull_logs:
+    #             # pull logs format is JSON, need parse
+    #             if "status" in log:
+    #                 status = log["status"]
+    #                 layer_id = log.get("id", None)
+    #                 progress_detail = log.get("progressDetail", {})
+    #                 current = progress_detail.get("current", 0)  # finished bytes
+    #                 total = progress_detail.get("total", 0)  # total bytes
+    #                 # layer_id and total update progress bar
+    #                 if layer_id and total:
+    #                     if layer_id not in progress_bars:
+    #                         # new propgress bar
+    #                         progress_bars[layer_id] = tqdm(
+    #                             total=total,
+    #                             desc=f"Layer {layer_id[:12]}",
+    #                             unit="B",
+    #                             unit_scale=True,
+    #                             unit_divisor=1024
+    #                         )
+    #                     progress_bars[layer_id].n = current
+    #                     progress_bars[layer_id].refresh()
+    #                 # no progression information, show status
+    #                 elif layer_id:
+    #                     logger_func(f"{status} {layer_id}".strip())
+    #                 else:
+    #                     logger_func(f"{status}".strip())
+    #         # close all progress bars
+    #         for bar in progress_bars.values():
+    #             bar.close()
+    #         logger_func(f"Pull {image_name}:{tag} finish")
+    #     except docker.errors.APIError as e:
+    #         logger_func(f"Pull image failed: {e}")
+    #     except Exception as e:
+    #         logger_func(f"Other Error: {e}")
+    #     finally:
+    #         client.close()
 
     def _load_definition(self):
         """
@@ -195,6 +196,25 @@ class DynverseDockerBackend(Backend):
         definition = Definition(definition_raw)
         definition["run"] = {"backend": "container", "image_id": self.image_id}
         self.definition = definition
+
+    def _extract_inputs(self, fdata, inputs_df):
+        """
+        ref: PyDynverse/pydynverse/wrap/method_extract_args.py _method_extract_inputs
+        """
+        # logger.debug("FateMethod _extract_inputs")
+
+        # extract model input expression matrix
+        input_ids = inputs_df["input_id"][inputs_df["type"] == "expression"].tolist()
+        inputs = {}
+        for expression_id in input_ids:
+            # inputs[expression_id] = get_expression(dataset, expression_id)
+            inputs[expression_id] = fdata.layers[expression_id]
+        # main expression matrix, for example, Component1 and Slingshot need "expression", while monocle_ddrtree need "counts"
+        inputs["expression_id"] = input_ids[0]
+        # add cell and gene ids
+        inputs["cell_ids"] = fdata.obs.index.tolist()
+        inputs["feature_ids"] = fdata.var.index.tolist()
+        return inputs
 
 
 # ====================================================================================================

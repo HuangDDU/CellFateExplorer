@@ -4,6 +4,8 @@ import cfe
 import os
 import yaml
 
+import pandas as pd
+
 
 class TestBackend:
     """abstract, cannot be instantiated"""
@@ -13,6 +15,7 @@ class TestBackend:
 class TestDefinition():
 
     def setup_method(self):
+        # definition in python function backend
         definition_yaml_filename = f"{os.path.dirname(__file__)}/../../cfe/method/definition/cf_paga.yml"
         with open(definition_yaml_filename, 'r') as file:
             definition_raw = yaml.safe_load(file)
@@ -33,6 +36,16 @@ class TestDefinition():
         definition_dict = dict(definition)
         attribute_name_list = ["method", "wrapper", "container", "package", "manuscript", "parameters"]
         assert set(attribute_name_list).issubset(set(definition_dict.keys())), f"{attribute_name_list} should be the keys of the dict: {definition_dict}"
+
+    def test_get_inputs_df(self):
+        inputs_df = self.definition.get_inputs_df()
+        assert isinstance(inputs_df, pd.DataFrame)
+        assert inputs_df.columns.tolist() == ["input_id", "required", "type"]
+        assert inputs_df["type"].isin(["expression", "parameter", "prior_information"]).all()
+
+    def test_get_parameters(self):
+        parameters = self.definition.get_parameters()
+        assert isinstance(parameters, dict)
 
 
 if __name__ == "__main__":

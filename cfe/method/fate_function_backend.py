@@ -43,7 +43,7 @@ class FunctionBackend(Backend):
             definition_raw = yaml.safe_load(file)
 
         definition = Definition(definition_raw)
-        definition["run"] = {"backend": "python_function", "image_id": self.function_name}
+        definition["run"] = {"backend": "python_function", "function_name": self.function_name}
         self.definition = definition
 
     def install_pipy_package(self):

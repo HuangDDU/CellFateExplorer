@@ -2,28 +2,20 @@ import pytest
 import cfe
 
 import os.path
-import docker
 import scanpy as sc
 
+function_name = "cf_paga"
 
-image_id = "dynverse/ti_paga:v0.9.9.05"
 
+class TestFunctionBackend:
 
-@pytest.mark.skipif(not cfe.settings.r_available, reason="R is not available")
-class TestDynverseDockerBackend:
     def setup_method(self):
-        self.dynverse_docker = cfe.method.DynverseDockerBackend(image_id)
-
-    def test_init(self):
-        assert self.dynverse_docker.image_id == image_id
+        self.function_backend = cfe.method.FunctionBackend(function_name)
 
     def test_load_backend(self):
-        # load_backend has benn called in __init__
-        assert not self.dynverse_docker.definition is None
+        assert self.function_backend.function_name == function_name
 
     def test_run(self):
-        # notebook/quickstart_paga.ipynb
-        # data
         adata = sc.read(f"{os.path.dirname(__file__)}/../data/bifurcating.h5ad")
         fadata = cfe.data.FateAnnData.from_anndata(adata)
         fadata.layers["counts"] = fadata.X.copy()
@@ -38,23 +30,13 @@ class TestDynverseDockerBackend:
         parameters = {"filter_features": False}
         fadata.add_prior_information(**prior_information)  # add prior information to fadata
 
-        self.dynverse_docker.run(fadata, parameters)
+        self.function_backend.run(fadata, parameters)
 
         assert fadata.is_wrapped_with_trajectory
 
-    def test_pull_image_with_progress(self):
-        # _pull_image_with_progress is called in test_load_backend, which is called in __init__
-        # check if the specific image has been downloaded
-        client = docker.from_env()
-        flag = False
-        for image in client.images.list():
-            if image_id in image.tags:
-                flag = True
-        assert flag
-
     def test_load_definition(self):
         # _load_definition is called in test_load_backend, which is called in __init__
-        definition = self.dynverse_docker.definition
+        definition = self.function_backend.definition
         assert isinstance(definition, cfe.method.Definition)
 
 
