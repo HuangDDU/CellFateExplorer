@@ -111,7 +111,8 @@ class WaypointWrapper(FateWrapper):
         ])
 
         # remae all milestone ids to MILESTONE_ID
-        def milestone_trafo_fun(x): return f"MILESTONE_{x}"
+        def milestone_trafo_fun(x):
+            return f"MILESTONE_{x}"
         milestone_network["from"] = milestone_network["from"].apply(milestone_trafo_fun)
         milestone_network["to"] = milestone_network["to"].apply(milestone_trafo_fun)
         milestone_id_list = list(map(milestone_trafo_fun, milestone_id_list))
@@ -168,7 +169,7 @@ class WaypointWrapper(FateWrapper):
                 return None
 
             scaled_dists = relevant_pct.copy()
-            scaled_dists["dist"] = scaled_dists.apply(lambda x: x["percentage"]*tent_distances.loc[mid, x["milestone_id"]], axis=1)
+            scaled_dists["dist"] = scaled_dists.apply(lambda x: x["percentage"] * tent_distances.loc[mid, x["milestone_id"]], axis=1)
             tent_distances_long = tent_distances.melt(var_name="from", value_name="length")  # 宽数据转化为长数据
             tent_distances_long["to"] = tent_distances_long["from"]
 
@@ -183,8 +184,8 @@ class WaypointWrapper(FateWrapper):
                 # TODO: 暂时不管有向图
                 pass
 
-            distances = pairwise_distances(pct_mat, pct_mat.loc[wp_cells+tent], metric="manhattan")
-            distances = pd.DataFrame(index=pct_mat.index, columns=wp_cells+tent, data=distances)
+            distances = pairwise_distances(pct_mat, pct_mat.loc[wp_cells + tent], metric="manhattan")
+            distances = pd.DataFrame(index=pct_mat.index, columns=wp_cells + tent, data=distances)
             distances = distances.reset_index().melt(id_vars="from", var_name="to", value_name="length")  # 宽数据转化为长数据
             distances = distances[~(distances["from"] == distances["to"])]
             return distances

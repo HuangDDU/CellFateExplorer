@@ -32,14 +32,14 @@ def cf_paga(fadata, parameters={}):
     # 4. 结果提取
     # (1)
     epsilon = 1e-3  # 后续对于非常小的数字缩放值
-    cell_ids = adata.obs.index.to_list()
+    # cell_ids = adata.obs.index.to_list()
     branch_ids = adata.obs[cluster_key].unique().to_list()
     # (2) branches
     branches = pd.DataFrame({
         "branch_id": branch_ids,
         "directed": True,
     })
-    branches["length"] = adata.obs[[cluster_key, "dpt_pseudotime"]].groupby(cluster_key).apply(lambda x: x["dpt_pseudotime"].max() - x["dpt_pseudotime"].min()+epsilon).reset_index()[0]
+    branches["length"] = adata.obs[[cluster_key, "dpt_pseudotime"]].groupby(cluster_key).apply(lambda x: x["dpt_pseudotime"].max() - x["dpt_pseudotime"].min() + epsilon).reset_index()[0]
     # (3) branch_network
     branch_network = pd.DataFrame(
         np.triu(adata.uns["paga"]["connectivities"].todense(), k=0),  # 保留上三角矩阵
@@ -69,7 +69,7 @@ def cf_paga(fadata, parameters={}):
         "percentage": adata.obs["dpt_pseudotime"]
     })
     # branch内部按照伪时间排序
-    branch_progressions["percentage"] = branch_progressions.groupby("branch_id")["percentage"].apply(lambda x: (x-x.min())/(x.max() - x.min()+epsilon)).values
+    branch_progressions["percentage"] = branch_progressions.groupby("branch_id")["percentage"].apply(lambda x: (x - x.min()) / (x.max() - x.min() + epsilon)).values
     branch_progressions
 
     # 5. 结果封装保存

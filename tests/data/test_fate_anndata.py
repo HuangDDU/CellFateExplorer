@@ -47,11 +47,11 @@ class TestFateAnnData:
         # data source: https://github.com/theislab/cellrank_reproducibility/blob/master/data/dyngen_simulated_data/bifurcating.h5ad
         adata = sc.read_h5ad(f"{os.path.dirname(__file__)}/bifurcating.h5ad")
         fadata = cfe.data.FateAnnData.from_anndata(adata)
-        assert not fadata.id is None
+        assert fadata.id is not None
 
     def test_get_item(self):
         pass
-    
+
     def test_add_prior_information(self):
         self.fadata.add_prior_information(start_id="a", group_id=self.fadata.obs["clusters"].tolist())
         self.fadata.add_prior_information(end_id="f")

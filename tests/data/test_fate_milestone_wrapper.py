@@ -92,7 +92,7 @@ class TestMilestoneWrapper:
                 ["f", "Z", "A", 0.2],
             ]
         )
-        assert type(progression) == pd.DataFrame, "progression should be a dataframe"
+        assert isinstance(progression, pd.DataFrame), "progression should be a dataframe"
         assert compare_dataframes(progression, expected_progression, on_columns=["cell_id", "from", "to"])
 
     # this test case can't execute the method

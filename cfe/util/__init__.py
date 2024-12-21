@@ -1,5 +1,5 @@
 from .random_time_string import random_time_string
 
-__name__ == [
+__all__ = [
     "random_time_string",
 ]

@@ -19,7 +19,7 @@ class TestDynverseDockerBackend:
 
     def test_load_backend(self):
         # load_backend has benn called in __init__
-        assert not self.dynverse_docker.definition is None
+        assert self.dynverse_docker.definition is not None
 
     def test_run(self):
         # notebook/quickstart_paga.ipynb

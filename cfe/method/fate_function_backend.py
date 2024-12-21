@@ -30,8 +30,9 @@ class FunctionBackend(Backend):
     def run(self, fadata, parameters):
 
         priors = self._extract_priors(fadata, self.definition.get_inputs_df())  # only simple check prior information, don't use the priors
+        priors
         default_parameters = self.definition.get_parameters()
-        if not parameters is None:
+        if parameters is not None:
             default_parameters.update(parameters)
         parameters = default_parameters
 

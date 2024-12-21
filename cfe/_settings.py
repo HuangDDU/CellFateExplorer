@@ -13,8 +13,8 @@ class CellFateExplorerConfig:
         try:
             import rpy2
             self.r_available = True
-            logger.debug("R is available. You can use dynverse backend.")
-        except:
+            logger.debug(f"R and rpy2{rpy2} is available. You can use dynverse backend.")
+        except ImportError:
             self.r_available = False
             logger.warning("R not available. You cannot use dynverse backend.")
         # manually settings r_available=False for testing

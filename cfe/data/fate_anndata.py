@@ -130,7 +130,7 @@ class FateAnnData(ad.AnnData):
         connected_components = nx.connected_components(graph)
         for component_index, component in enumerate(connected_components):
             for node in component:
-                mapper[node] = str(component_index+1)  # milestone id starts from 1
+                mapper[node] = str(component_index + 1)  # milestone id starts from 1
         milestone_network["from"] = milestone_network["from"].apply(lambda x: mapper[x])
         milestone_network["to"] = milestone_network["to"].apply(lambda x: mapper[x])
         milestone_network = pd.merge(milestone_network, branches, on="branch_id")

@@ -156,10 +156,10 @@ class Definition():
 
         # inputs
         inputs = self.wrapper["input_required"]
-        inputs = inputs.copy() if type(inputs) == list else [inputs]
+        inputs = inputs.copy() if isinstance(inputs, list) else [inputs]
         if "input_optional" in self.wrapper:
             input_optional = self.wrapper["input_optional"]
-            inputs += input_optional if type(input_optional) == list else [input_optional]
+            inputs += input_optional if isinstance(input_optional) == list else [input_optional]
 
         # extra input, including data and parameters
         params = self.parameters.index.tolist()

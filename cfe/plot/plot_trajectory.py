@@ -5,8 +5,7 @@ import pandas as pd
 import scanpy as sc
 
 from .._logging import logger
-from ..data import FateAnnData, WaypointWrapper
-from ..method import FateMethod
+from ..data import FateAnnData
 
 
 def plot_trajectory(
@@ -27,14 +26,14 @@ def plot_trajectory(
     # base embedding
     ax = sc.pl.embedding(fadata, basis=basis, **sc_pl_embedding_kwargs, show=False)
 
-   # project waypoint to embedding space
+    # project waypoint to embedding space
     cell_positions = pd.DataFrame(data=fadata.obsm[f"X_{basis}"][:, :2], columns=["comp_1", "comp_2"])
     cell_positions["cell_id"] = fadata.obs.index
     waypoint_projection = project_waypoints(fadata, cell_positions)
 
-   # plot waypoint to show trajectory
+    # plot waypoint to show trajectory
     wp_segments = waypoint_projection["segments"]  # projection to trajectory
-    milestone_positions = wp_segments[wp_segments["milestone_id"].apply(lambda x: not x is None)]  # only save waypoint on mileston
+    milestone_positions = wp_segments[wp_segments["milestone_id"].apply(lambda x: x is not None)]  # only save waypoint on mileston
 
     # plot waypoint curve
     ax.scatter(milestone_positions["comp_1"], milestone_positions["comp_2"], c="black", s=size_milestones)  # waypoint scatter
@@ -52,8 +51,8 @@ def plot_trajectory(
             s = pd.Series({
                 "x": start["comp_1"],
                 "y": start["comp_2"],
-                "dx": end["comp_1"]-start["comp_1"],
-                "dy": end["comp_2"]-start["comp_2"]}
+                "dx": end["comp_1"] - start["comp_1"],
+                "dy": end["comp_2"] - start["comp_2"]}
             )
             return s
         arrow_df = wp_segments[wp_segments["arrow"]].groupby("group").apply(get_arrow_df)
@@ -82,7 +81,7 @@ def project_waypoints(
     logger.debug(f"add waypoints shape is {waypoints['waypoint_geodesic_distances'].shape}, finished!")
 
     if trajectory_projection_sd is None:
-        trajectory_projection_sd = sum(milestone_wrapper["milestone_network"]["length"])*0.05
+        trajectory_projection_sd = sum(milestone_wrapper["milestone_network"]["length"]) * 0.05
 
     wps = waypoints
     # wps["waypoint_network"] = wps["waypoint_network"].rename({"from_milestone_id": "milestone_id_from", "to_milestone_id": "milestone_id_to"})

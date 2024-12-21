@@ -30,7 +30,7 @@ class FateMethod():
             answer = input("""
                     You can run this method as an Python function (1), CFE Docker containter(2), Dynverse Docker container(3, default)
                     Which do you want to use?
-                    1: Python function 
+                    1: Python function
                     2: CFE Docker Container
                     else: Dynverse Docker Container[default]
             """)
@@ -49,17 +49,15 @@ class FateMethod():
         if backend == "python_function":
             function_name = method_backend_dict[self.method_name]["python_function"]
             self.method_backend = FunctionBackend(function_name)
-            logger.info(f"backend: Python Function")
         elif backend == "cfe_docker":
             # TODO: file is same as python_function
             image_id = method_backend_dict[self.method_name]["cfe_docker"]
             self.method_backend = CFEDockerBackend(image_id)
-            logger.info(f"backend: Python Function")
         else:
-            # backend == "dynverse_docker"
+            backend == "dynverse_docker"
             image_id = method_backend_dict[self.method_name]["dynverse_docker"]
             self.method_backend = DynverseDockerBackend(image_id=image_id)
-            logger.info(f"backend: Dynverse Docker")
+        logger.info(f"method_backend: {self.method_backend}")
 
         self.backend = backend
 
@@ -69,9 +67,7 @@ class FateMethod():
         parameters: dict = None,
     ):
         """
-        ref: 
-            - pydynverse/wrap/method_execute._method_execute
-
+        ref: pydynverse/wrap/method_execute._method_execute
         """
         # logger.debug("FateMethod infer_trajectory")
         self.method_backend.run(fadata, parameters)

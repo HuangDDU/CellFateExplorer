@@ -1,5 +1,5 @@
 from .plot_trajectory import plot_trajectory
 
-__name__ == [
+__all__ = [
     "plot_trajectory",
 ]

@@ -1,6 +1,5 @@
 import tempfile
 import yaml
-import tqdm
 import docker
 
 import os
@@ -43,7 +42,7 @@ class DynverseDockerBackend(DockerBackEnd):
             image_name, tag = image_id.split(":")
             self._pull_image_with_progress(image_name, tag=tag, logger_func=logger.info)
             img = client.images.get(image_id)
-            logger.info(f"Docker image({image_id}) loaded")
+            logger.info(f"Docker image({image_id}) {img} loaded")
 
         self._load_definition()  # load definition
 
@@ -102,7 +101,7 @@ class DynverseDockerBackend(DockerBackEnd):
         inputs = self._extract_inputs(fadata, self.definition.get_inputs_df())  # extract main input
         priors = self._extract_priors(fadata, self.definition.get_inputs_df())  # extract prior information
         default_parameters = self.definition.get_parameters()
-        if not parameters is None:
+        if parameters is not None:
             default_parameters.update(parameters)
         parameters = default_parameters
 
@@ -173,7 +172,7 @@ class DynverseDockerBackend(DockerBackEnd):
 
     def _load_definition(self):
         """
-        extract and parse definition.yml, including description, required parameters and prior   knowledge 
+        extract and parse definition.yml, including description, required parameters and prior knowledge
 
         ref: pydynverse.wrap.container_get._container_get_definition
         """
@@ -323,11 +322,7 @@ class DynverseDockerOutput():
         self.output_json = output_json
 
     def __str__(self) -> str:
-        return f"""
-            id: {self.id}, 
-            trajectory_type: {self.trajectory_type}, 
-            attribute_list: {self.__dict__.keys()}
-            """
+        return f"id: {self.id}, trajectory_type: {self.trajectory_type}, attribute_list: {self.__dict__.keys()}"
 
     def __getitem__(self, key):
         # 通过键名访问属性

@@ -30,11 +30,11 @@ class TestWaypointWrapper:
         ww = self.waypoint_wrapper
         ww.pipeline()
 
-        assert not ww.waypoint_milestone_percentages is None
-        assert not ww.waypoint_progressions is None
-        assert not ww.waypoint_geodesic_distances is None
-        assert not ww.waypoint_network is None
-        assert not ww.waypoints is None
+        assert ww.waypoint_milestone_percentages is not None
+        assert ww.waypoint_progressions is not None
+        assert ww.waypoint_geodesic_distances is not None
+        assert ww.waypoint_network is not None
+        assert ww.waypoints is not None
 
     def test_select_waypoints(self):
         ww = self.waypoint_wrapper

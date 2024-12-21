@@ -24,12 +24,12 @@ class MilestoneWrapper(FateWrapper):
 
         # choose milestone_percentages or progressions
         if (milestone_percentages is None) == (progressions is None):
-            if not milestone_percentages is None:
+            if milestone_percentages is not None:
                 logger.warning("Both milestone_percentages and progressions are given, will only use progressions")
                 milestone_percentages = None
             else:
                 raise ValueError("Exactly one of milestone_percentages or progressions, must be defined, the other must be None")
-        if not milestone_percentages is None:
+        if milestone_percentages is not None:
             self.cell_id_list = milestone_percentages["cell_id"].unique().tolist()
         else:
             self.cell_id_list = progressions["cell_id"].unique().tolist()
@@ -99,7 +99,7 @@ class MilestoneWrapper(FateWrapper):
     def pipeline(self):
         # NOTE: no redundant check
         if (self.milestone_percentages is None) == (self.progressions is None):
-            if not self.milestone_percentages is None:
+            if self.milestone_percentages is not None:
                 logger.warning("Both milestone_percentages and progressions are given, will only use progressions")
                 self.milestone_percentages = None
             else:
