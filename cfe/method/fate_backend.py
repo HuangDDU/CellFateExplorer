@@ -45,11 +45,11 @@ class Backend(ABC):
     #     inputs["feature_ids"] = fdata.var.index.tolist()
     #     return inputs
 
-    def _extract_priors(self, fdata, inputs_df):
+    def _extract_prior_information(self, fdata, inputs_df):
         """
         ref: PyDynverse/pydynverse/wrap/method_extract_args.py _method_extract_priors
         """
-        # logger.debug("FateMethod _extract_priors")
+        # logger.debug("FateMethod _extract_prior_information")
 
         # extract prior information from
         priors = fdata.prior_information
@@ -159,7 +159,7 @@ class Definition():
         inputs = inputs.copy() if isinstance(inputs, list) else [inputs]
         if "input_optional" in self.wrapper:
             input_optional = self.wrapper["input_optional"]
-            inputs += input_optional if isinstance(input_optional) == list else [input_optional]
+            inputs += input_optional if isinstance(input_optional, list) else [input_optional]
 
         # extra input, including data and parameters
         params = self.parameters.index.tolist()

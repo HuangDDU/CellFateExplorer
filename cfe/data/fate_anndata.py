@@ -77,6 +77,15 @@ class FateAnnData(ad.AnnData):
         self.cfe_dict["milestone_wrapper"] = milestone_wrapper
         self.is_wrapped_with_trajectory = True
 
+    def add_trajectory_by_type(self, trajectory_dict: dict):
+        # TODO : 暂时只是paga
+        trajectory_type = "paga"
+        self.add_branch_trajectory(
+            branch_network=trajectory_dict["branch_network"],
+            branches=trajectory_dict["branches"],
+            branch_progressions=trajectory_dict["branch_progressions"]
+        )
+
     def add_waypoints(self, milestone_wrapper: MilestoneWrapper):
         """
         create WaypointWrapper object

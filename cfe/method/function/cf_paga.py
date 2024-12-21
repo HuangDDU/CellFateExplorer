@@ -1,3 +1,6 @@
+#!/usr/local/bin/python3
+import pickle
+
 import numpy as np
 import pandas as pd
 import anndata as ad
@@ -5,16 +8,14 @@ import scanpy as sc
 import scvelo as scv
 
 
-def cf_paga(fadata, parameters={}):
+def cf_paga(adata: ad.AnnData, prior_information: dict = {}, parameters: dict = {}):
 
     # 1. 数据构造
-    prior_information = fadata.prior_information
+    adata = adata.copy()
+    # 提取先验知识和参数
     start_id = prior_information["start_id"]
     connectivity_cutoff = parameters.get("connectivity_cutoff", 0.5)
     cluster_key = "cf_paga_clusters"
-    adata = ad.AnnData(X=fadata.X)
-    adata.obs.index = fadata.obs.index
-    adata.var.index = fadata.var.index
     adata.obs[cluster_key] = prior_information["groups_id"]
 
     # 2. 预处理
@@ -72,12 +73,29 @@ def cf_paga(fadata, parameters={}):
     branch_progressions["percentage"] = branch_progressions.groupby("branch_id")["percentage"].apply(lambda x: (x - x.min()) / (x.max() - x.min() + epsilon)).values
     branch_progressions
 
-    # 5. 结果封装保存
-    fadata.add_branch_trajectory(
-        branch_network=branch_network,
-        branches=branches,
-        branch_progressions=branch_progressions
+    # # 5. 结果封装保存
+    # fadata.add_branch_trajectory(
+    #     branch_network=branch_network,
+    #     branches=branches,
+    #     branch_progressions=branch_progressions
 
-    )
+    # )
+    trajectory_dict = {
+        "branch_network": branch_network,
+        "branches": branches,
+        "branch_progressions": branch_progressions
+    }
+    return trajectory_dict
 
-    return fadata
+
+if __name__ == "__main__":
+
+    from parse_args import parse_args
+
+    adata, prior_information, parameters, output_filename = parse_args()
+
+    trajectory_dict = cf_paga(adata, prior_information, parameters)
+
+    with open(output_filename, "wb") as f:
+        pickle.dump(trajectory_dict, f)
+    print("PAGA Finish!")

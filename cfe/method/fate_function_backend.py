@@ -3,6 +3,7 @@ import importlib.util
 import yaml
 
 from .._logging import logger
+from ..data import FateAnnData
 from .fate_backend import Backend, Definition
 
 
@@ -27,16 +28,17 @@ class FunctionBackend(Backend):
 
         self._load_definition()
 
-    def run(self, fadata, parameters):
+    def run(self, fadata: FateAnnData, parameters: dict):
 
-        priors = self._extract_priors(fadata, self.definition.get_inputs_df())  # only simple check prior information, don't use the priors
-        priors
+        prior_information = self._extract_prior_information(fadata, self.definition.get_inputs_df())  # check prior information and add to fadata
         default_parameters = self.definition.get_parameters()
         if parameters is not None:
             default_parameters.update(parameters)
         parameters = default_parameters
 
-        self.function(fadata, parameters)  # call fadata.add_trajectory
+        trajectory_dict = self.function(fadata, prior_information, parameters)
+
+        fadata.add_trajectory_by_type(trajectory_dict)
 
     def _load_definition(self):
         definition_file_path = f"{os.path.dirname(__file__)}/definition/{self.function_name}.yml"
