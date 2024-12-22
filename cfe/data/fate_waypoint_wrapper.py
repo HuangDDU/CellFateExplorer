@@ -75,13 +75,13 @@ class WaypointWrapper(FateWrapper):
                 to_waypoint=group["waypoint_id"].shift(-1),
             ))\
             .dropna()\
-            .reset_index(drop=True)  # 分组后, 组内按照percentage排序, lead函数向当前看下一行的元素, 如果是组内最后一个元素则获得NULL
+            .reset_index(drop=True)  # Sort in ascending percentage within the group. "lead" function get the next row, get None if is the last row in group
         waypoint_network = waypoint_network[["from_waypoint", "to_waypoint", "from", "to"]]
         waypoint_network.columns = ["from", "to", "from_milestone_id", "to_milestone_id"]
         self.waypoint_network = waypoint_network
 
         waypoints = waypoint_milestone_percentages.iloc[waypoint_milestone_percentages.groupby("waypoint_id")["percentage"].idxmax()].reset_index(drop=True)
-        waypoints["milestone_id"] = waypoints.apply(lambda x: x["milestone_id"] if x["percentage"] == 1 else None, axis=1)  # 不在里程碑上的waypoint的milestone_id为None
+        waypoints["milestone_id"] = waypoints.apply(lambda x: x["milestone_id"] if x["percentage"] == 1 else None, axis=1)  # if waypoint is not on milestone, the milestone_id=None
         waypoints = waypoints[["waypoint_id", "milestone_id"]]
         self.waypoints = waypoints
 
@@ -119,11 +119,11 @@ class WaypointWrapper(FateWrapper):
         milestone_percentages["milestone_id"] = milestone_percentages["milestone_id"].apply(milestone_trafo_fun)
         divergence_regions["milestone_id"] = divergence_regions["milestone_id"].apply(milestone_trafo_fun)
 
-        # 添加extra发散区域, 正常的边也被当作发散区域
+        # add an extra divergence area, where normal edges are also treated as divergence areas
         extra_divergences = milestone_network.copy()
         extra_divergences = extra_divergences[~(extra_divergences["from"] == extra_divergences["to"])]
-        # extra_divergences = extra_divergences.query("not from == to") # query更加优雅
-        # in_divergence判断当前边是否在已有的发散区域内，标准的延迟承诺区域
+        # extra_divergences = extra_divergences.query("not from == to") # query is more elegant
+        # in_divergence determines whether the current edge is within the existing divergence region
         divergence_regions_set_list = divergence_regions.groupby("divergence_id")["milestone_id"].apply(set).tolist()
 
         def is_milestone_in_divergence(milestone_set, divergence_regions_set_list):
@@ -132,36 +132,36 @@ class WaypointWrapper(FateWrapper):
                     return True
             return False
         extra_divergences["in_divergence"] = extra_divergences.apply(lambda x: is_milestone_in_divergence({x["from"], x["to"]}, divergence_regions_set_list), axis=1)
-        extra_divergences = extra_divergences[~extra_divergences["in_divergence"]]  # 只保留新的发散区域
+        extra_divergences = extra_divergences[~extra_divergences["in_divergence"]]  # only reserve the new divergence area
         extra_divergences["divergence_id"] = extra_divergences.apply(lambda x: f"{x['from']}__{x['to']}", axis=1)
         extra_divergences = pd.concat([
-            # 添加新的milestone_id和is_start列
+            # add new columns: milestone_id, is_start
             extra_divergences.assign(milestone_id=extra_divergences["from"], is_start=True),
             extra_divergences.assign(milestone_id=extra_divergences["to"], is_start=False)
         ])[["divergence_id", "milestone_id", "is_start"]]
 
-        # 合并发散区域
+        # merge divergence regions
         divergence_regions = pd.concat([divergence_regions, extra_divergences]).reset_index(drop=True)
         divergence_ids = divergence_regions["divergence_id"].unique()
 
-        # 准备使用NetworkX, 构造相关数据, 从DataFrame开始构造
+        # NetworkX for related data from edge DataFrame
         milestone_graph = nx.from_pandas_edgelist(milestone_network, source="from", target="to", edge_attr="length")
 
-        # NOTE: 1. 分别计算
-        # 计算发散区域内部细胞间距离
+        # NOTE: 1. Calculate separately
+        # calculate the distance between cells within the divergent
         def calc_divergence_inner_distance_df(did):
             dir = divergence_regions[divergence_regions["divergence_id"] == did]
-            mid = dir[dir["is_start"]]["milestone_id"].tolist()  # 该区域起点milestone_id
-            tent = dir["milestone_id"].tolist()  # 该区域所有milestone_id
-            tent_distances = pd.DataFrame(index=mid, columns=tent, data=np.zeros((len(mid), len(tent))))  # 区域内起点到所有milestone的距离
-            # 从图中提取对应的边
+            mid = dir[dir["is_start"]]["milestone_id"].tolist()  # starting point of the region is milestone_id
+            tent = dir["milestone_id"].tolist()  # milestone_id of all milestones in the divergence
+            tent_distances = pd.DataFrame(index=mid, columns=tent, data=np.zeros((len(mid), len(tent))))  # The distance from the starting point within the region to all milestones
+            # extract corresponding edges from the graph
             for i in mid:
                 for j in tent:
                     if i == j:
                         tent_distances.loc[i, j] = 0
                     else:
                         tent_distances.loc[i, j] = milestone_graph.edges[(i, j)]["length"]
-            # 此处复用来找相关的点的cell_id
+            # find cell_id of relevant points by reusing is_milestone_in_divergence
             relevant_pct_cell_id_list = milestone_percentages.groupby("cell_id")["milestone_id"].apply(lambda x: is_milestone_in_divergence(set(x), [set(tent)]))
             relevant_pct_cell_id_list = relevant_pct_cell_id_list[relevant_pct_cell_id_list].index.to_list()
             relevant_pct = milestone_percentages[milestone_percentages["cell_id"].apply(lambda x: x in relevant_pct_cell_id_list)]
@@ -170,37 +170,40 @@ class WaypointWrapper(FateWrapper):
 
             scaled_dists = relevant_pct.copy()
             scaled_dists["dist"] = scaled_dists.apply(lambda x: x["percentage"] * tent_distances.loc[mid, x["milestone_id"]], axis=1)
-            tent_distances_long = tent_distances.melt(var_name="from", value_name="length")  # 宽数据转化为长数据
+            tent_distances_long = tent_distances.melt(var_name="from", value_name="length")  # wide data to long data
             tent_distances_long["to"] = tent_distances_long["from"]
 
             pct_mat = pd.concat([
                 scaled_dists[["cell_id", "milestone_id", "dist"]].rename(columns={"cell_id": "from", "milestone_id": "to", "dist": "length"}),
                 tent_distances_long
-            ]).pivot(index="from", columns="to", values="length").fillna(0)  # (n_cell+n_milestone+n_waypoint)*n_milestone, 长数据转宽数据, 索引名为from
+            ])\
+                .drop_duplicates()\
+                .pivot(index="from", columns="to", values="length").fillna(0)  # (n_cell+n_milestone+n_waypoint)*n_milestone, long data to wide data, "from" is index
 
             wp_cells = list(set(pct_mat.index) & set(waypoint_id_list))
 
             if directed:
-                # TODO: 暂时不管有向图
+                # TODO: directed graph
                 pass
 
             distances = pairwise_distances(pct_mat, pct_mat.loc[wp_cells + tent], metric="manhattan")
             distances = pd.DataFrame(index=pct_mat.index, columns=wp_cells + tent, data=distances)
-            distances = distances.reset_index().melt(id_vars="from", var_name="to", value_name="length")  # 宽数据转化为长数据
+            distances = distances.reset_index().melt(id_vars="from", var_name="to", value_name="length")  # wide data to long data
             distances = distances[~(distances["from"] == distances["to"])]
             return distances
 
         cell_in_tent_distances = pd.concat([calc_divergence_inner_distance_df(did) for did in divergence_ids])
 
         if directed:
-            # TODO: 暂时不管有向图
+            # TODO: directed graph
             pass
 
-        # NOTE: 2. 合并计算
-        # 合并两个图到一张图上
-        graph = pd.concat([milestone_network, cell_in_tent_distances]).groupby(["from", "to"]).agg({"length": "min"}).reset_index()  # 合并后提取最短边，目前没什么效果，可能对环图有用
+        # NOTE: 2. merge calculation
+        # merge two graph to one graph
+        # extract the shortest edge after merging, currently has little effect, may be useful for the ring graph
+        graph = pd.concat([milestone_network, cell_in_tent_distances]).groupby(["from", "to"]).agg({"length": "min"}).reset_index()
         graph = nx.from_pandas_edgelist(graph, source="from", target="to", edge_attr="length")
-        # 选择后续有向图的最短距离模式
+        # select the shortest distance mode for subsequent directed graphs
         if directed or directed == "forward":
             mode = "out"
         elif directed == "reverse":
@@ -209,7 +212,7 @@ class WaypointWrapper(FateWrapper):
             mode = "all"
         mode
 
-        # 调用dijkstra计算, 计算waypoint和cell之间的
+        # call dijkstra to calculate the relationship between waypoint and cell
         out = pd.DataFrame(np.zeros((len(waypoint_id_list), len(cell_id_list))), index=waypoint_id_list, columns=cell_id_list)
         for source in waypoint_id_list:
             length_dict = nx.single_source_dijkstra_path_length(graph, source=source, weight="length")
@@ -219,7 +222,7 @@ class WaypointWrapper(FateWrapper):
                 else:
                     out.loc[source, target] = np.inf
 
-        # TODO: 过滤一些细胞
+        # TODO: filter cells
         cell_ids_filtered_list = []
         if len(cell_ids_filtered_list) > 0:
             pass

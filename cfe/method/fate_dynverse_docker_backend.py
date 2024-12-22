@@ -10,41 +10,16 @@ import pandas as pd
 import rpy2.robjects as ro
 
 from .._logging import logger
-from .fate_backend import DockerBackEnd, Definition
+from .fate_backend import DockerBackend, Definition
 
 
 # DockerBackend: specific implementation of abstract Backend class using Dynverse Docker.
-class DynverseDockerBackend(DockerBackEnd):
+class DynverseDockerBackend(DockerBackend):
     def __init__(self, image_id):
         # logger.debug("DockerBackend __init__")
 
         self.image_id = image_id
-        self.load_backend()
-
-    def load_backend(self):
-        """
-        ref: pydynverse.wrap.method_create_ti_method_container.create_ti_method_container
-        """
-        image_id = self.image_id
-        # load dynverse docker image
-        client = docker.from_env()
-
-        # check docker image exists
-        try:
-            # exist
-            img = client.images.get(image_id)
-            logger.debug(f"Docker image({image_id}) loaded")
-        except Exception as e:
-            # no exist, need pull request
-            logger.debug(e)
-            logger.info(f"Docker image({image_id}) was not found")
-            # client.images.pull(container_id)
-            image_name, tag = image_id.split(":")
-            self._pull_image_with_progress(image_name, tag=tag, logger_func=logger.info)
-            img = client.images.get(image_id)
-            logger.info(f"Docker image({image_id}) {img} loaded")
-
-        self._load_definition()  # load definition
+        self.load_backend()  # implemented in DockerBackend
 
     def preprocess(self, inputs, parameters, priors, tmp_wd, seed=0):
         """
@@ -99,7 +74,7 @@ class DynverseDockerBackend(DockerBackEnd):
     def run(self, fadata, parameters):
 
         inputs = self._extract_inputs(fadata, self.definition.get_inputs_df())  # extract main input
-        priors = self._extract_priors(fadata, self.definition.get_inputs_df())  # extract prior information
+        priors = self._extract_prior_information(fadata, self.definition.get_inputs_df())  # extract prior information
         default_parameters = self.definition.get_parameters()
         if parameters is not None:
             default_parameters.update(parameters)
@@ -117,84 +92,6 @@ class DynverseDockerBackend(DockerBackEnd):
 
             # postprocess
             self.postprocess(fadata, trajectory)
-
-    # def _pull_image_with_progress(self, image_name, tag=None, logger_func=print):
-    #     """
-    #     pull dynverse docker image  and show progress bar with tqdm
-
-    #     ref: pydynverse.wrap.method_create_ti_method_container.pull_image_with_progress
-    #     """
-    #     if logger_func is None:
-    #         # default logger function is print
-    #         logger_func = print
-    #     client = docker.from_env()
-    #     try:
-    #         logger_func(f"Try to pull image {image_name}:{tag}...\n")
-    #         api_client = docker.APIClient(base_url="unix://var/run/docker.sock")  # stream docker clinet can get log
-    #         pull_logs = api_client.pull(repository=image_name, tag=tag, stream=True, decode=True)  # pull image
-    #         progress_bars = {}  # initialize progress bar, store every layer's progress bar
-    #         for log in pull_logs:
-    #             # pull logs format is JSON, need parse
-    #             if "status" in log:
-    #                 status = log["status"]
-    #                 layer_id = log.get("id", None)
-    #                 progress_detail = log.get("progressDetail", {})
-    #                 current = progress_detail.get("current", 0)  # finished bytes
-    #                 total = progress_detail.get("total", 0)  # total bytes
-    #                 # layer_id and total update progress bar
-    #                 if layer_id and total:
-    #                     if layer_id not in progress_bars:
-    #                         # new propgress bar
-    #                         progress_bars[layer_id] = tqdm(
-    #                             total=total,
-    #                             desc=f"Layer {layer_id[:12]}",
-    #                             unit="B",
-    #                             unit_scale=True,
-    #                             unit_divisor=1024
-    #                         )
-    #                     progress_bars[layer_id].n = current
-    #                     progress_bars[layer_id].refresh()
-    #                 # no progression information, show status
-    #                 elif layer_id:
-    #                     logger_func(f"{status} {layer_id}".strip())
-    #                 else:
-    #                     logger_func(f"{status}".strip())
-    #         # close all progress bars
-    #         for bar in progress_bars.values():
-    #             bar.close()
-    #         logger_func(f"Pull {image_name}:{tag} finish")
-    #     except docker.errors.APIError as e:
-    #         logger_func(f"Pull image failed: {e}")
-    #     except Exception as e:
-    #         logger_func(f"Other Error: {e}")
-    #     finally:
-    #         client.close()
-
-    def _load_definition(self):
-        """
-        extract and parse definition.yml, including description, required parameters and prior knowledge
-
-        ref: pydynverse.wrap.container_get._container_get_definition
-        """
-        with tempfile.TemporaryDirectory() as tmp_wd:
-            # start docker container
-            client = docker.from_env()
-            container = client.containers.run(
-                entrypoint="cp /code/definition.yml /copy_mount/definition.yml",  # aim copy dir
-                image=self.image_id,
-                volumes=[f"{tmp_wd}:/copy_mount"],
-                detach=True,
-            )
-            container.wait()
-            container.stop()
-            container.remove()
-            # read and parse yml file
-            with open(f"{tmp_wd}/definition.yml", 'r') as file:
-                definition_raw = yaml.safe_load(file)
-
-        definition = Definition(definition_raw)
-        definition["run"] = {"backend": "container", "image_id": self.image_id}
-        self.definition = definition
 
     def _extract_inputs(self, fdata, inputs_df):
         """

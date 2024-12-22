@@ -46,11 +46,11 @@ class FateMethod():
         with open(os.path.join(os.path.dirname(__file__), "method_backend.yml"), 'r') as file:
             method_backend_dict = yaml.safe_load(file)
 
+        # TODO: need adjust for some incomplete methods like slingshot, only dynverse docker is available
         if backend == "python_function":
             function_name = method_backend_dict[self.method_name]["python_function"]
             self.method_backend = FunctionBackend(function_name)
         elif backend == "cfe_docker":
-            # TODO: file is same as python_function
             image_id = method_backend_dict[self.method_name]["cfe_docker"]
             self.method_backend = CFEDockerBackend(image_id)
         else:

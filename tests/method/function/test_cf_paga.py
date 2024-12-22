@@ -18,9 +18,8 @@ class TestCFPAGA():
             "groups_id": self.fadata.obs["lineage"].tolist()
         }
         parameters = {"connectivity_cutoff": 0.8, "filter_features": False}
-        self.fadata.add_prior_information(**prior_information)  # add prior information to fadata
-        fadata = cfe.method.cf_paga(self.fadata, parameters)  # add parameters when inferring trajectory
-        assert fadata.is_wrapped_with_trajectory
+        trajectory_dict = cfe.method.cf_paga(self.fadata, prior_information, parameters)  # add parameters when inferring trajectory
+        assert trajectory_dict.keys() == {"branch_network", "branches", "branch_progressions"}
 
 
 if __name__ == "__main__":

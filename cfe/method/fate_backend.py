@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
+import tempfile
+import yaml
 import tqdm
-import pandas as pd
 import docker
+import pandas as pd
 
 from .._logging import logger
 
@@ -88,7 +90,32 @@ class Backend(ABC):
         return priors
 
 
-class DockerBackEnd(Backend):
+class DockerBackend(Backend):
+
+    def load_backend(self):
+        """
+        ref: pydynverse.wrap.method_create_ti_method_container.create_ti_method_container
+        """
+        image_id = self.image_id
+        # load dynverse docker image
+        client = docker.from_env()
+
+        # check docker image exists
+        try:
+            # exist
+            img = client.images.get(image_id)
+            logger.debug(f"Docker image({image_id}) loaded")
+        except Exception as e:
+            # no exist, need pull request
+            logger.debug(e)
+            logger.info(f"Docker image({image_id}) was not found")
+            # client.images.pull(container_id)
+            image_name, tag = image_id.split(":")
+            self._pull_image_with_progress(image_name, tag=tag, logger_func=logger.info)
+            img = client.images.get(image_id)
+            logger.info(f"Docker image({image_id}) {img} loaded")
+
+        self._load_definition()  # load definition
 
     def _pull_image_with_progress(self, image_name, tag=None, logger_func=print):
         """
@@ -141,6 +168,32 @@ class DockerBackEnd(Backend):
             logger_func(f"Other Error: {e}")
         finally:
             client.close()
+
+    def _load_definition(self):
+        """
+        extract and parse definition.yml, including description, required parameters and prior knowledge
+
+        ref: pydynverse.wrap.container_get._container_get_definition
+        """
+        with tempfile.TemporaryDirectory() as tmp_wd:
+            # start docker container
+            client = docker.from_env()
+            container = client.containers.run(
+                entrypoint="cp /code/definition.yml /copy_mount/definition.yml",  # aim copy dir
+                image=self.image_id,
+                volumes=[f"{tmp_wd}:/copy_mount"],
+                detach=True,
+            )
+            container.wait()
+            container.stop()
+            container.remove()
+            # read and parse yml file
+            with open(f"{tmp_wd}/definition.yml", 'r') as file:
+                definition_raw = yaml.safe_load(file)
+
+        definition = Definition(definition_raw)
+        definition["run"] = {"backend": "container", "image_id": self.image_id}
+        self.definition = definition
 
 
 class Definition():

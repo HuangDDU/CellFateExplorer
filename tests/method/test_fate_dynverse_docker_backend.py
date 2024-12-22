@@ -5,6 +5,7 @@ import os.path
 import docker
 import scanpy as sc
 
+from .test_fate_function_backend import get_test_run_data
 
 image_id = "dynverse/ti_paga:v0.9.9.05"
 
@@ -18,28 +19,12 @@ class TestDynverseDockerBackend:
         assert self.dynverse_docker.image_id == image_id
 
     def test_load_backend(self):
-        # load_backend has benn called in __init__
+        # load_backend has benn called in __init__, implemented in DockerBackend
         assert self.dynverse_docker.definition is not None
 
     def test_run(self):
-        # notebook/quickstart_paga.ipynb
-        # data
-        adata = sc.read(f"{os.path.dirname(__file__)}/../data/bifurcating.h5ad")
-        fadata = cfe.data.FateAnnData.from_anndata(adata)
-        fadata.layers["counts"] = fadata.X.copy()
-        fadata.layers["expression"] = fadata.X.copy()
-        cluster_key = "lineage"
-        fadata.obs.index = fadata.obs["cell_id"]
-        # prior_information,  parameters
-        prior_information = {
-            "start_id": "cell1",
-            "groups_id": fadata.obs[cluster_key].tolist()
-        }
-        parameters = {"filter_features": False}
-        fadata.add_prior_information(**prior_information)  # add prior information to fadata
-
+        fadata, parameters = get_test_run_data()
         self.dynverse_docker.run(fadata, parameters)
-
         assert fadata.is_wrapped_with_trajectory
 
     def test_pull_image_with_progress(self):
