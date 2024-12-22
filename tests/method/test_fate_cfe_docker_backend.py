@@ -3,7 +3,7 @@ import cfe
 
 from .test_fate_function_backend import get_test_run_data
 
-image_id = "cfe/cf_paga:0.0.1"
+image_id = "huangzhaoyang/cf_paga:0.0.1"
 
 
 class TestCFEDockerBackend():
