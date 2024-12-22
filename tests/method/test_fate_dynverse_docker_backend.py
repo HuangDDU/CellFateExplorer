@@ -1,9 +1,7 @@
 import pytest
 import cfe
 
-import os.path
 import docker
-import scanpy as sc
 
 from .test_fate_function_backend import get_test_run_data
 
