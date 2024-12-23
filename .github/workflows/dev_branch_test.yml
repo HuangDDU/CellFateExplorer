@@ -39,6 +39,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install flake8 autopep8 pytest
+        pip install rpy2==3.3.0 # extracted from requirement.txt
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         
     - name: Lint with flake8

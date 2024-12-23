@@ -9,10 +9,12 @@ from .fate_waypoint_wrapper import WaypointWrapper
 
 
 class FateAnnData(ad.AnnData):
-    """
-    AnnData object for CellFateExplorer, related data are stored in the object.uns[cfe] attribute.
-    """
+    """AnnData object for CellFateExplorer, related data are stored in the object.uns[cfe] attribute.
 
+    Args:
+        ad (_type_): _description_
+    """
+    
     def __init__(
             self,
             name: str = "FateAnnData",

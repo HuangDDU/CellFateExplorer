@@ -1,0 +1,8 @@
+mkdocs==1.6.1
+mkdocs-material==9.5.49
+mkdocs-autorefs
+mkdocs-get-deps
+mkdocs-material-extensions
+mkdocs-same-dir
+mkdocstrings
+mkdocstrings-python
