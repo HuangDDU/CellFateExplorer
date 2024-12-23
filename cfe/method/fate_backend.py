@@ -10,8 +10,6 @@ from .._logging import logger
 
 # Backend: abstract class, used for subsequent specific implementation such as "DockerBackend" class and "FunctionBackend" class
 class Backend(ABC):
-    def __init__(self, method_name):
-        pass
 
     @abstractmethod
     def load_backend(self):
@@ -23,29 +21,9 @@ class Backend(ABC):
 
     @abstractmethod
     def _load_definition(self):
-        """
-        Load definition yml file during load_backend
+        """_summary_
         """
         pass
-
-    # def _extract_inputs(self, fdata, inputs_df):
-    #     """
-    #     ref: PyDynverse/pydynverse/wrap/method_extract_args.py _method_extract_inputs
-    #     """
-    #     # logger.debug("FateMethod _extract_inputs")
-
-    #     # extract model input expression matrix
-    #     input_ids = inputs_df["input_id"][inputs_df["type"] == "expression"].tolist()
-    #     inputs = {}
-    #     for expression_id in input_ids:
-    #         # inputs[expression_id] = get_expression(dataset, expression_id)
-    #         inputs[expression_id] = fdata.layers[expression_id]
-    #     # main expression matrix, for example, Component1 and Slingshot need "expression", while monocle_ddrtree need "counts"
-    #     inputs["expression_id"] = input_ids[0]
-    #     # add cell and gene ids
-    #     inputs["cell_ids"] = fdata.obs.index.tolist()
-    #     inputs["feature_ids"] = fdata.var.index.tolist()
-    #     return inputs
 
     def _extract_prior_information(self, fdata, inputs_df):
         """

@@ -5,19 +5,40 @@ import pickle
 import docker
 
 from .._logging import logger
+from ..data import FateAnnData
 from .fate_backend import DockerBackend
 
 
-# CfeDockerBackend: specific implementation of abstract Backend class using CFE Docker..
 class CFEDockerBackend(DockerBackend):
-    def __init__(self, image_id):
+    """CFEDockerBackend: specific implementation of abstract Backend class using CFE Docker.
+    """
+
+    def __init__(self, image_id: str = "huangzhaoyang/cf_paga:0.0.1"):
+        """Initialize the CFEDockerBackend class.
+
+
+        Args:
+            image_id (_type_, optional): image id.
+        """
+
         logger.debug("CFEDockerBackend __init__")
 
         self.image_id = image_id
         self.load_backend()  # implemented in DockerBackend
 
-    def preprocess(self, fadata, prior_information, parameters, tmp_wd):
-        # save adata h5ad , prior information and parameters json file in tmp_wd dir
+    def preprocess(self,
+                   fadata: FateAnnData,
+                   prior_information: dict,
+                   parameters: dict,
+                   tmp_wd: str) -> None:
+        """save adata h5ad , prior information and parameters json file in tmp_wd dir
+
+        Args:
+            fadata (FateAnnData): _description_
+            prior_information (dict): parameter dict
+            parameters (dict): prior information dict
+            tmp_wd (str): tmp working dir for docker mount and saving h5ad.h5, json file
+        """
         fadata.write_h5ad(f"{tmp_wd}/adata.h5ad")
 
         with open(f"{tmp_wd}/prior_information.json", "w") as f:
@@ -26,8 +47,15 @@ class CFEDockerBackend(DockerBackend):
         with open(f"{tmp_wd}/parameters.json", "w") as f:
             json.dump(parameters, f)
 
-    def execute(self, tmp_wd):
-        # CFE Docker run, save dict.pkl in tmp_wd dir, return trajectory_dict
+    def execute(self, tmp_wd: str) -> dict:
+        """CFE Docker run, save dict.pkl in tmp_wd dir, return trajectory_dict
+
+        Args:
+            tmp_wd (str): tmp working dir for docker mount and saving h5ad.h5, json file
+
+        Returns:
+            dict: trajectory dict
+        """
         tmp_wd
         trajectory_dict = {}
 
@@ -58,12 +86,22 @@ class CFEDockerBackend(DockerBackend):
                 trajectory_dict = pickle.load(f)
             return trajectory_dict
 
-    def postprocess(self, fadata, trajectory_dict):
-        # save trajectory_dict
+    def postprocess(self, fadata: FateAnnData, trajectory_dict: dict) -> None:
+        """Save trajectory_dict
+
+        Args:
+            fadata (FateAnnData): FateAnnData to be added the trajectory dict
+            trajectory_dict (dict): trajectory dict
+        """
         fadata.add_trajectory_by_type(trajectory_dict)
 
-    def run(self, fadata, parameters):
-        # TODO:
+    def run(self, fadata: FateAnnData, parameters: dict) -> None:
+        """Run cfe docker pipeline to infer the trajectory
+
+        Args:
+            fadata (FateAnnData): ateAnnData to be added the trajector
+            parameters (dict): parameter dict
+        """
         prior_information = self._extract_prior_information(fadata, self.definition.get_inputs_df())  # check prior information and add to fadata
         default_parameters = self.definition.get_parameters()
         if parameters is not None:

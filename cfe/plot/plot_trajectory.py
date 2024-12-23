@@ -11,14 +11,23 @@ from ..data import FateAnnData
 def plot_trajectory(
         fadata: FateAnnData,
         basis: str = "umap",
-        size_milestones=30,
-        size_transitions=2,
-        color_trajectory=None,
+        size_milestones: int = 30,
+        size_transitions: int = 2,
+        color_trajectory: str = None,
         ** sc_pl_embedding_kwargs
-):
+) -> None:
+    """Plot cell embedding and trajectory
+
+     ref: pydynverse/plot/plot_dimred.plot_dimred
+
+    Args:
+        fadata (FateAnnData): FateAnnData object with trajectory.
+        basis (str, optional): embedding name in .obsm. key.
+        size_milestones (int, optional): milestone point size.
+        size_transitions (int, optional): waypoint on trajectory curve size.
+        color_trajectory (str, optional): trajectory color.
     """
-    ref: pydynverse/plot/plot_dimred.plot_dimred
-    """
+
     # NOTE: a fdata, a method
     # TODO: a fdata, many methods
     logger.debug("plot_trajectory")
@@ -68,9 +77,18 @@ def project_waypoints(
     fadata: FateAnnData,
     cell_positions: pd.DataFrame,
     trajectory_projection_sd: float = None
-):
-    """
+) -> dict:
+    """projectory waypoint into embbeding space
+
     ref: pydynverse/plot/project_waypoints.project_waypoints_coloured
+
+    Args:
+        fadata (FateAnnData): FateAnnData object with trajectory.
+        cell_positions (pd.DataFrame): cell embedding position.
+        trajectory_projection_sd (float, optional): distance scale of waypoint projection.
+
+    Returns:
+        dict: waypoint_projection dict
     """
     # if waypoints is None:
     # select waypoint

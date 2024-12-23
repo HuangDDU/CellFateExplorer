@@ -1,3 +1,5 @@
+from typing import Callable
+
 import numpy as np
 import pandas as pd
 import networkx as nx
@@ -9,25 +11,43 @@ from .fate_milestone_wrapper import MilestoneWrapper
 
 
 class WaypointWrapper(FateWrapper):
+    """Wrapper for trajectory waypoint
+    """
+
     def __init__(
         self,
         milestone_wrapper: MilestoneWrapper,
-        name="WaypointWrapper"
+        name: str = "WaypointWrapper",
+        n_waypoints: int = 200,
+        transform: Callable[[float], float] = lambda x: x,  # edge length transform function
+        resolution: float = None
     ):
+        """Initialize the WaypointWrapper class.
+
+        Args:
+            milestone_wrapper (MilestoneWrapper): MlestoneWrapper object for trajectory
+            name (str, optional): name of the wrapper.
+            n_waypoints (int, optional): num of waypoint.
+            transform (_type_, optional): transform function for milestone network edge length.
+            resolution (float, optional): resolution.
+        """
         self.id = random_time_string(name)
         self.milestone_wrapper = milestone_wrapper
-
-    def pipeline(self):
-        self._select_waypoints()
+        self._select_waypoints(n_waypoints, transform, resolution)
 
     def _select_waypoints(
             self,
-            n_waypoints=200,
-            transform=lambda x: x,  # edge length transform function
-            resolution=None):
-        """
-        select waypoints base milestone network edge length and resolution parameter
+            n_waypoints: int = 200,
+            transform: Callable[[float], float] = lambda x: x,  # edge length transform function
+            resolution: float = None) -> None:
+        """select waypoints base milestone network edge length and resolution parameter
+
         ref: pydynverse/wrap/wrap_add_waypoints.select_waypoints
+
+        Args:
+            n_waypoints (int, optional): num of waypoint.
+            transform (_type_, optional): transform function for milestone network edge length.
+            resolution (float, optional): resolution.
         """
         mr = self.milestone_wrapper
 
@@ -85,15 +105,19 @@ class WaypointWrapper(FateWrapper):
         waypoints = waypoints[["waypoint_id", "milestone_id"]]
         self.waypoints = waypoints
 
-    def _calculate_geodesic_distances(self):
-        """
-        calculate geodesic distances between cells and waypoints/milestones
+    def _calculate_geodesic_distances(self) -> pd.DataFrame:
+        """Calculate geodesic distances between cells and waypoints/milestones
+
         overall idea:
             1. calculate the full path of the target point within each divergent region separately
             2. merge and calculate the distance on the overall graph
 
-        ref: PyDynverse/pydynverse/wrap/calculate_geodesic_distances.py
+        ref: pydynverse/wrap/calculate_geodesic_distances.py
+
+        Returns:
+            pd.DataFrame: distances dataframe
         """
+
         # attribute in the MilestoneWrapper
         cell_id_list = self.milestone_wrapper.cell_id_list
         milestone_id_list = self.milestone_wrapper.id_list

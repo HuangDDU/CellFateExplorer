@@ -3,10 +3,6 @@ from abc import ABC, abstractmethod
 
 class FateWrapper(ABC):
 
-    @abstractmethod
-    def pipeline(self):
-        pass
-
     def __contains__(self, item):
         "check if have attribute"
         return hasattr(self, item)

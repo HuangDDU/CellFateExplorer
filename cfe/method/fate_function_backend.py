@@ -7,15 +7,24 @@ from ..data import FateAnnData
 from .fate_backend import Backend, Definition
 
 
-# FunctionBackend: specific implementation of abstract Backend class using Python functions.
 class FunctionBackend(Backend):
+    """Specific implementation of abstract Backend class using Python functions.
+    """
+
     def __init__(self, function_name="cf_paga"):
+        """Initialize the FunctionBackend class.
+
+        Args:
+            function_name (str, optional):  name of the function backend .
+        """
         logger.debug("FunctionBackend __init__")
 
         self.function_name = function_name
         self.load_backend()
 
-    def load_backend(self):
+    def load_backend(self) -> None:
+        """load backend from python funct6ion
+        """
         function_file_path = f"{os.path.dirname(__file__)}/function/{self.function_name}.py"
         # Load the module
         spec = importlib.util.spec_from_file_location(self.function_name, function_file_path)
@@ -28,7 +37,13 @@ class FunctionBackend(Backend):
 
         self._load_definition()
 
-    def run(self, fadata: FateAnnData, parameters: dict):
+    def run(self, fadata: FateAnnData, parameters: dict) -> None:
+        """call the python function to get trajectory dict
+
+        Args:
+            fadata (FateAnnData): the input FateAnnData object for trajectory inference method
+            parameters (dict):  the  parameters for trajectory inference method
+        """
 
         prior_information = self._extract_prior_information(fadata, self.definition.get_inputs_df())  # check prior information and add to fadata
         default_parameters = self.definition.get_parameters()
@@ -40,7 +55,9 @@ class FunctionBackend(Backend):
 
         fadata.add_trajectory_by_type(trajectory_dict)
 
-    def _load_definition(self):
+    def _load_definition(self) -> None:
+        """load definition from yaml file and ceate Definition object
+        """
         definition_file_path = f"{os.path.dirname(__file__)}/definition/{self.function_name}.yml"
         with open(definition_file_path, 'r') as file:
             definition_raw = yaml.safe_load(file)
@@ -50,4 +67,5 @@ class FunctionBackend(Backend):
         self.definition = definition
 
     def install_pipy_package(self):
+        # TODO: install the relevant package from pipy
         logger.debug("install_pipy_package")

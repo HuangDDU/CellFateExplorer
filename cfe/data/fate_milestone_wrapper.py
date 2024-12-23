@@ -6,14 +6,30 @@ from .fate_wrapper import FateWrapper
 
 
 class MilestoneWrapper(FateWrapper):
+    """Wrapper for trajectory milestones
+    """
+
     def __init__(
         self,
         milestone_network: pd.DataFrame,
         divergence_regions: pd.DataFrame = None,
         milestone_percentages: pd.DataFrame = None,
-        progressions: pd.DataFrame = None
+        progressions: pd.DataFrame = None,
+        name="MilestoneWrapper"
     ):
-        self.id = random_time_string("MilestoneWrapper")
+        """Initialize the MilestoneWrapper class.
+
+        Args:
+            milestone_network (pd.DataFrame): milestone network with column list: ["from", "to", "length", "directed"]
+            divergence_regions (pd.DataFrame, optional): divergence regions with column list: ["divergence_id", "milestone_id", "is_start"].
+            milestone_percentages (pd.DataFrame, optional): milestone percentage with column list: ["cell_id", "milestone_id", "percentage"].
+            progressions (pd.DataFrame, optional): progressions with  column list: ["cell_id", "from", "to", "percentage"].
+            name (str, optional): name of the wrapper.
+
+        Raises:
+            ValueError: Exactly one of milestone_percentages or progressions, must be defined, the other should be None
+        """
+        self.id = random_time_string(name)
         self.milestone_network = milestone_network
         self.id_list = milestone_network[["from", "to"]].stack().unique().tolist()
 
@@ -22,13 +38,20 @@ class MilestoneWrapper(FateWrapper):
         else:
             self.divergence_regions = divergence_regions
 
+        # ref: pydynverse/wrap/wrap_add_trajectory.add_trajectory
         # choose milestone_percentages or progressions
         if (milestone_percentages is None) == (progressions is None):
             if milestone_percentages is not None:
                 logger.warning("Both milestone_percentages and progressions are given, will only use progressions")
                 milestone_percentages = None
             else:
-                raise ValueError("Exactly one of milestone_percentages or progressions, must be defined, the other must be None")
+                raise ValueError("Exactly one of milestone_percentages or progressions, must be defined, the other should be None")
+        if progressions is None:
+            # milestone_percentages -> progressions, 'add_trajectory' test case
+            progressions = MilestoneWrapper.convert_milestone_percentages_to_progressions(milestone_network, milestone_percentages)
+        else:
+            # progressions -> milestone_percentages, 'add_trajectory_branch' test case
+            milestone_percentages = MilestoneWrapper.convert_progressions_to_milestone_percentages(milestone_network, progressions)
         if milestone_percentages is not None:
             self.cell_id_list = milestone_percentages["cell_id"].unique().tolist()
         else:
@@ -36,6 +59,7 @@ class MilestoneWrapper(FateWrapper):
         self.milestone_percentages = milestone_percentages
         self.progressions = progressions
 
+        # self.classify_milestone_network()
         self.milestone_network_class = "N"
         self.directed = False
 
@@ -43,10 +67,15 @@ class MilestoneWrapper(FateWrapper):
     def convert_milestone_percentages_to_progressions(
         milestone_network: pd.DataFrame,
         milestone_percentages: pd.DataFrame
-    ):
-        """
-        milestone_percentages -> progressions, "add_trajectory" test case
-        ref: pydynverse/wrap/convert_milestone_percentages_to_progressions.convert_milestone_percentages_to_progressions
+    ) -> pd.DataFrame:
+        """Convert: milestone_percentages -> progressions, "add_trajectory" test case use it
+
+        Args:
+            milestone_network (pd.DataFrame): milestone network with column list: ["from", "to", "length", "directed"]
+            milestone_percentages (pd.DataFrame):  milestone percentage with column list: ["cell_id", "milestone_id", "percentage"].
+
+        Returns:
+            pd.DataFrame: progressions with  column list: ["cell_id", "from", "to", "percentage"]
         """
         # part1: for cells that have 2 or more milestones
         # first merge based on "to" key result in many invalid cell_id-form relationship
@@ -72,12 +101,17 @@ class MilestoneWrapper(FateWrapper):
     def convert_progressions_to_milestone_percentages(
         milestone_network: pd.DataFrame,
         progressions: pd.DataFrame
-    ):
-        """
-        progressions -> milestone_percentages, "add_branch_trajectory" test case.
-        resuse for "wrap_add_waypoint", written as the static method of MilestoneWrapper Class
+    ) -> pd.DataFrame:
+        """Convert: progressions -> milestone_percentages, "add_trajectory_branch" test case use it
 
         ref: pydynverse/wrap/convert_progressions_to_milestone_percentages.convert_progressions_to_milestone_percentages
+
+        Args:
+            milestone_network (pd.DataFrame): milestone network with column list: ["from", "to", "length", "directed"]
+            progressions (pd.DataFrame): progressions with  column list: ["cell_id", "from", "to", "percentage"]
+
+        Returns:
+            pd.DataFrame: milestone percentage with column list: ["cell_id", "milestone_id", "percentage"]
         """
         # self loops
         selfs = progressions[progressions["from"] == progressions["to"]]
@@ -96,27 +130,8 @@ class MilestoneWrapper(FateWrapper):
 
         return milestone_percentages
 
-    def pipeline(self):
-        # NOTE: no redundant check
-        if (self.milestone_percentages is None) == (self.progressions is None):
-            if self.milestone_percentages is not None:
-                logger.warning("Both milestone_percentages and progressions are given, will only use progressions")
-                self.milestone_percentages = None
-            else:
-                raise ValueError("Exactly one of milestone_percentages or progressions, must be defined, the other must be None")
-
-        if self.progressions is None:
-            # milestone_percentages -> progressions, 'add_trajectory' test case
-            self.progressions = MilestoneWrapper.convert_milestone_percentages_to_progressions(self.milestone_network, self.milestone_percentages)
-        else:
-            # progressions -> milestone_percentages, 'add_branch_trajectory' test case
-            self.milestone_percentages = MilestoneWrapper.convert_progressions_to_milestone_percentages(self.milestone_network, self.progressions)
-
-        self.classify_milestone_network()
-
-    def classify_milestone_network(self):
-        """
-        milestone network classification
+    def classify_milestone_network(self) -> None:
+        """Milestone network classification
 
         ref: pydynverse/wrap/wrap_add_trajectory.changed_topology
         """
@@ -124,9 +139,8 @@ class MilestoneWrapper(FateWrapper):
         self.milestone_network_class = "N"
         self.directed = False
 
-    def gather_cells_at_milestones(self):
-        """
-        move cells to their nearest milestone
+    def gather_cells_at_milestones(self) -> None:
+        """Move cells to their nearest milestone
 
         ref: pydynverse/wrap/wrap_gather_cells_at_milestones.gather_cells_at_milestones
         """

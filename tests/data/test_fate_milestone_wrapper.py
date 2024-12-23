@@ -99,14 +99,6 @@ class TestMilestoneWrapper:
     # def test_convert_progressions_to_milestone_percentages(self):
     #     pass
 
-    def test_pipeline(self):
-        mw = self.milestone_wrapper
-
-        mw.pipeline()
-
-        assert mw.progressions is not None
-        assert mw.milestone_percentages is not None
-
 
 if __name__ == "__main__":
     pytest.main(["-v", __file__])

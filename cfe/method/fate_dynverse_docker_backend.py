@@ -10,21 +10,43 @@ import pandas as pd
 import rpy2.robjects as ro
 
 from .._logging import logger
+from ..data import FateAnnData
 from .fate_backend import DockerBackend, Definition
 
 
-# DockerBackend: specific implementation of abstract Backend class using Dynverse Docker.
 class DynverseDockerBackend(DockerBackend):
-    def __init__(self, image_id):
+    """DockerBackend: specific implementation of abstract Backend class using Dynverse Docker.
+    """
+
+    def __init__(self, image_id: str = "dynverse/ti_paga:v0.9.9.05"):
+        """Initialize the DynverseDockerBackend class.
+
+        Args:
+            image_id (str, optional): image id.
+        """
         # logger.debug("DockerBackend __init__")
 
         self.image_id = image_id
         self.load_backend()  # implemented in DockerBackend
 
-    def preprocess(self, inputs, parameters, priors, tmp_wd, seed=0):
-        """
+    def preprocess(self,
+                   inputs: dict,
+                   parameters: dict,
+                   priors: dict,
+                   tmp_wd: dict,
+                   seed: int = 0) -> None:
+        """Preproces: create input.h5 for dynverse docker execute
+
         ref: pydynverse/wrap/method_create_ti_method_container._method_execution_preproc_container
+
+        Args:
+            inputs (dict): input dict
+            parameters (dict): parameter dict
+            priors (dict): prior information dict
+            tmp_wd (dict): tmp working dir for docker mount and saving input.h5
+            seed (int, optional): random seed.
         """
+
         task = inputs
         task["parameters"] = parameters
         task["priors"] = priors
@@ -32,9 +54,16 @@ class DynverseDockerBackend(DockerBackend):
         task["verbose"] = True
         write_h5(task, f"{tmp_wd}/input.h5")  # json->h5
 
-    def execute(self, tmp_wd):
-        """
+    def execute(self, tmp_wd: str) -> "DynverseDockerOutput":
+        """Execute: Dynverse docker execute and parse result file "output.h5"
+
         ref: pydynverse/wrap/method_create_ti_method_container._method_execution_execute_container
+
+        Args:
+            tmp_wd (str): tmp working dir for docker mount and saving input.h5
+
+        Returns:
+            DynverseDockerOutput:  parse result file "output.h5"
         """
         args = ["--dataset", "/ti/input.h5", "--output", "/ti/output.h5"]
 
@@ -64,15 +93,26 @@ class DynverseDockerBackend(DockerBackend):
             dynverse_docker_output = read_h5(f"{tmp_wd}/output.h5")  # read docker result h5
             return dynverse_docker_output
 
-    def postprocess(self, fadata, trajectory):
+    def postprocess(self, fadata: FateAnnData, trajectory: dict) -> None:
+        """Postprocess: call fadata.add_trajectory
+
+        Args:
+            fadata (FateAnnData): FateAnnData to be added the trajectory dict
+            trajectory (dict): trajectory dict
+        """
         fadata.add_trajectory(
             milestone_network=trajectory.milestone_network,
             divergence_regions=trajectory.divergence_regions,
             milestone_percentages=trajectory.milestone_percentages,
         )
 
-    def run(self, fadata, parameters):
+    def run(self, fadata: FateAnnData, parameters: dict):
+        """Run dynverse docker pipeline to infer the trajectory
 
+        Args:
+            fadata (FateAnnData): FateAnnData to be added the trajectory
+            parameters (dict): parameter dict
+        """
         inputs = self._extract_inputs(fadata, self.definition.get_inputs_df())  # extract main input
         priors = self._extract_prior_information(fadata, self.definition.get_inputs_df())  # extract prior information
         default_parameters = self.definition.get_parameters()
@@ -93,10 +133,19 @@ class DynverseDockerBackend(DockerBackend):
             # postprocess
             self.postprocess(fadata, trajectory)
 
-    def _extract_inputs(self, fdata, inputs_df):
-        """
+    def _extract_inputs(self, fdata: FateAnnData, inputs_df: pd.DataFrame) -> dict:
+        """extract input dict fom definition
+
         ref: PyDynverse/pydynverse/wrap/method_extract_args.py _method_extract_inputs
+
+        Args:
+            fdata (FateAnnData): FateAnnData object
+            inputs_df (pd.DataFrame): inputs_df from definition.yml
+
+        Returns:
+            dict: input dict
         """
+
         # logger.debug("FateMethod _extract_inputs")
 
         # extract model input expression matrix

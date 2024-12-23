@@ -74,7 +74,7 @@ def cf_paga(adata: ad.AnnData, prior_information: dict = {}, parameters: dict = 
     branch_progressions
 
     # # 5. 结果封装保存
-    # fadata.add_branch_trajectory(
+    # fadata.add_trajectory_branch(
     #     branch_network=branch_network,
     #     branches=branches,
     #     branch_progressions=branch_progressions

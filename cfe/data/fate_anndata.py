@@ -9,18 +9,20 @@ from .fate_waypoint_wrapper import WaypointWrapper
 
 
 class FateAnnData(ad.AnnData):
-    """AnnData object for CellFateExplorer, related data are stored in the object.uns[cfe] attribute.
-
-    Args:
-        ad (_type_): _description_
+    """AnnData object for CellFateExplorer, related data are stored in the object.uns["cfe"] attribute.
     """
-    
+
     def __init__(
             self,
             name: str = "FateAnnData",
             *args,
             **kwargs
     ):
+        """Initialize the FateAnnData class.
+
+        Args:
+            name (str, optional): name of the FateAnnData object.
+        """
         # logger.debug("FateAnnData __init__")
         self.id = random_time_string(name)
         super().__init__(*args, **kwargs)
@@ -33,25 +35,32 @@ class FateAnnData(ad.AnnData):
         self.is_wrapped_with_waypoints = False
 
     @classmethod
-    def from_anndata(cls, adata: ad.AnnData):
-        """
-        Create a FateAnnData object from an existing AnnData object.
-        """
-        logger.debug("Creating FateAnnData from existing AnnData")
+    def from_anndata(cls, adata: ad.AnnData) -> "FateAnnData":
+        """Create a FateAnnData object from an existing AnnData object.
 
-        fate_adata = cls(name=adata.name if hasattr(adata, "name") else "FateAnnData",
-                         X=adata.X,
-                         obs=adata.obs,
-                         var=adata.var,
-                         uns=adata.uns,
-                         obsm=adata.obsm,
-                         varm=adata.varm,
-                         layers=adata.layers)
+        Args:
+            adata (ad.AnnData): existing AnnData object
 
-        return fate_adata
-
-    def add_prior_information(self, **kwargs):
+        Returns:
+            fadata (cfe.data.FateAnnData): generated FateAnnData object
         """
+
+        logger.debug("Create a FateAnnData object from an existing AnnData object.")
+
+        fadata = cls(name=adata.name if hasattr(adata, "name") else "FateAnnData",
+                     X=adata.X,
+                     obs=adata.obs,
+                     var=adata.var,
+                     uns=adata.uns,
+                     obsm=adata.obsm,
+                     varm=adata.varm,
+                     layers=adata.layers)
+
+        return fadata
+
+    def add_prior_information(self, **kwargs) -> None:
+        """Add prior information to the FateAnnData object.
+
         ref: pydynverse/wrap/wrap_add_prior_information add_prior_information
         """
         self.prior_information.update(kwargs)
@@ -62,10 +71,16 @@ class FateAnnData(ad.AnnData):
         divergence_regions: pd.DataFrame = None,
         milestone_percentages: pd.DataFrame = None,
         progressions: pd.DataFrame = None,
-    ):
+    ) -> None:
+        """Create MilestoneWrapper object as trajectory
+
+        Args:
+            milestone_network (pd.DataFrame): milestone network with column list: ["from", "to", "length", "directed"]
+            divergence_regions (pd.DataFrame, optional): divergence regions with column list: ["divergence_id", "milestone_id", "is_start"].
+            milestone_percentages (pd.DataFrame, optional): milestone percentage with column list: ["cell_id", "milestone_id", "percentage"].
+            progressions (pd.DataFrame, optional): progressions with column list: ["cell_id", "from", "to", "percentage"].
         """
-        create MilestoneWrapper object
-        """
+
         logger.debug("FateAnnData add_trajectory")
 
         milestone_wrapper = MilestoneWrapper(
@@ -74,42 +89,54 @@ class FateAnnData(ad.AnnData):
             milestone_percentages=milestone_percentages,
             progressions=progressions
         )
-        milestone_wrapper.pipeline()
         self.milestone_wrapper = milestone_wrapper
         self.cfe_dict["milestone_wrapper"] = milestone_wrapper
         self.is_wrapped_with_trajectory = True
 
-    def add_trajectory_by_type(self, trajectory_dict: dict):
+    def add_trajectory_by_type(self, trajectory_dict: dict) -> None:
+        """Call the trajectory addition method based on specific trajectory types
+
+        Args:
+            trajectory_dict (dict): trajectory dict result based on specific trajectory types
+        """
+
         # TODO : 暂时只是paga
         trajectory_type = "paga"
-        self.add_branch_trajectory(
+        self.add_trajectory_branch(
             branch_network=trajectory_dict["branch_network"],
             branches=trajectory_dict["branches"],
             branch_progressions=trajectory_dict["branch_progressions"]
         )
 
-    def add_waypoints(self, milestone_wrapper: MilestoneWrapper):
-        """
-        create WaypointWrapper object
+    def add_waypoints(self, milestone_wrapper: MilestoneWrapper) -> None:
+        """Create WaypointWrapper object
+
+        Args:
+            milestone_wrapper (MilestoneWrapper): trajectory wrapper object
         """
         logger.debug("FateAnnData add_waypoints")
 
         waypoint_wrapper = WaypointWrapper(milestone_wrapper)
-        waypoint_wrapper.pipeline()
         self.waypoint_wrapper = waypoint_wrapper
         self.cfe_dict["waypoint_wrapper"] = waypoint_wrapper
         self.is_wrapped_with_waypoints = True
 
-    def add_branch_trajectory(
+    def add_trajectory_branch(
             self,
             branch_network: pd.DataFrame,
             branch_progressions: pd.DataFrame,
             branches: pd.DataFrame
-    ):
-        """
+    ) -> None:
+        """Add branch trajectory,such as paga
+
         ref: PyDynverse/pydynverse/wrap/wrap_add_branch_trajectory.add_branch_trajectory
+
+        Args:
+            branch_network (pd.DataFrame): branch network with column list: ["from", "to"]
+            branch_progressions (pd.DataFrame): branch progressions with column list: ["cell_id", "branch_id", "percentage"
+            branches (pd.DataFrame): branches with column list: ["branch_id", "length", "directed"]
         """
-        logger.debug("FateAnnData add_branch_trajectory")
+        logger.debug("FateAnnData add_trajectory_branch")
 
         branch_id_list = branches["branch_id"]
         milestone_network = pd.DataFrame({

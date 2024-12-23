@@ -9,7 +9,7 @@ class TestWaypointWrapper:
     def setup_method(self):
         from .test_fate_milestone_wrapper import setup_method_data
         self.milestone_wrapper = setup_method_data()
-        self.waypoint_wrapper = cfe.data.WaypointWrapper(self.milestone_wrapper)
+        self.waypoint_wrapper = cfe.data.WaypointWrapper(self.milestone_wrapper, resolution=1)
 
     def test_magic_method(self):
         """test __***__ methods"""
@@ -26,9 +26,9 @@ class TestWaypointWrapper:
         attribute_name_list = ["id"]
         assert set(attribute_name_list).issubset(set(ww.keys())), f"{attribute_name_list} should be the keys of the dict: {ww_dict}"
 
-    def test_pipeline(self):
+    def test_init(self):
         ww = self.waypoint_wrapper
-        ww.pipeline()
+        # ww.pipeline()
 
         assert ww.waypoint_milestone_percentages is not None
         assert ww.waypoint_progressions is not None
@@ -38,7 +38,7 @@ class TestWaypointWrapper:
 
     def test_select_waypoints(self):
         ww = self.waypoint_wrapper
-        ww._select_waypoints(resolution=1)
+        # ww._select_waypoints(resolution=1)
 
         # 预期构造结果
         expected_waypoint_milestone_percentages = pd.DataFrame(

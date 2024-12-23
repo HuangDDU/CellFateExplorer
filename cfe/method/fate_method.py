@@ -1,3 +1,4 @@
+from typing import Optional, Literal
 import os.path
 import yaml
 
@@ -13,14 +14,26 @@ from .fate_cfe_docker_backend import CFEDockerBackend
 
 class FateMethod():
 
-    def __init__(self, method_name="paga", backend=None):
+    """FateMethod, available backend: python_function, cfe_docker, dynverse_docker
+    """
+
+    def __init__(self,
+                 method_name: str = "paga",
+                 backend: Optional[Literal["python_function", "cfe_docker", "dynverse_docker", None]] = None):
+        """Initialize the FateMethod class.
+
+        Args:
+            method_name (str, optional): trajectory inference method name.
+            backend (_type_, optional): python_function, cfe_docker, dynverse_docker.
+        """
         # logger.debug("FateMethod __init__")
         self.method_name = method_name
         self.choose_backend(backend)
 
-    def choose_backend(self, backend=None):
-        """
-        ref: pydynverse.methods.method_choose_backend.method_choose_backend
+    def choose_backend(self, backend: Optional[Literal["python_function", "cfe_docker", "dynverse_docker", None]] = None) -> None:
+        """choose backend according to input backend and method_name
+        Args:
+            backend (_type_, optional): python_function, cfe_docker, dynverse_docker.
         """
         # logger.debug("FateMethod choose_backend")
         backend = settings.backend if backend is None else backend
@@ -65,9 +78,14 @@ class FateMethod():
         self,
         fadata: FateAnnData = None,
         parameters: dict = None,
-    ):
-        """
+    ) -> None:
+        """call the run function of method backend,
+
         ref: pydynverse/wrap/method_execute._method_execute
+
+        Args:
+            fadata (FateAnnData, optional): _description_. Defaults to None.
+            parameters (dict, optional): _description_. Defaults to None.
         """
         # logger.debug("FateMethod infer_trajectory")
         self.method_backend.run(fadata, parameters)

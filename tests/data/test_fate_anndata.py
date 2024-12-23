@@ -105,7 +105,7 @@ class TestFateAnnData:
             ]
         )
 
-        self.fadata.add_branch_trajectory(branch_network, branch_progressions, branches)
+        self.fadata.add_trajectory_branch(branch_network, branch_progressions, branches)
 
         # 预期构造结果
         expected_milestone_network = pd.DataFrame(
