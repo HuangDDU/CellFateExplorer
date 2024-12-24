@@ -1,6 +1,8 @@
 import networkx as nx
 import pandas as pd
 import anndata as ad
+import scanpy as sc
+
 from .._logging import logger
 from ..util import random_time_string
 
@@ -27,12 +29,20 @@ class FateAnnData(ad.AnnData):
         self.id = random_time_string(name)
         super().__init__(*args, **kwargs)
 
-        self.cfe_dict = {}
-        self.uns["cfe"] = self.cfe_dict
-        self.prior_information = {}
+        cfe_dict = self.uns.get("cfe", {})  # try to get the stored FateAnnData information
 
+        self.prior_information = cfe_dict.get("prior_information", {})
+        cfe_dict["prior_information"] = self.prior_information
+
+        self.milestone_wrapper = cfe_dict.get("milestone_wrapper", None)
+        self.waypoint_wrapper = cfe_dict.get("waypoint_wrapper", None)
+
+        # NOTE: Other attributes will be added later.
         self.is_wrapped_with_trajectory = False
         self.is_wrapped_with_waypoints = False
+
+        self.cfe_dict = cfe_dict
+        self.uns["cfe"] = self.cfe_dict
 
     @classmethod
     def from_anndata(cls, adata: ad.AnnData) -> "FateAnnData":
@@ -179,8 +189,24 @@ class FateAnnData(ad.AnnData):
 
         self.add_trajectory(milestone_network=milestone_network, progressions=progressions)
 
+    def write_h5ad(self, *args, **kwargs):
+        if self.cfe_dict.get("milestone_wrapper", None) is not None:
+            self.cfe_dict["milestone_wrapper"] = dict(self.cfe_dict["milestone_wrapper"])
+        if self.cfe_dict.get("waypoint_wrapper", None) is not None:
+            self.cfe_dict["waypoint_wrapper"] = dict(self.cfe_dict["waypoint_wrapper"])
+            self.cfe_dict["waypoint_wrapper"]["milestone_wrapper"] = None  # milestone_wrapper is redundent
+            waypoints = self.cfe_dict["waypoint_wrapper"]["waypoints"]
+            self.cfe_dict["waypoint_wrapper"]["waypoints"] = waypoints.fillna("")  # "" replace None
+        return super().write_h5ad(*args, **kwargs)
+
     def __getitem__(self, key):
         sub_adata = super().__getitem__(key)
         sub_fadata = self.from_anndata(sub_adata)
         # TODO: add sub operation for all other attributes, such as prior_information, milestone_wrapper, wayppoint_wrapper, etc.
         return sub_fadata
+
+
+def read_h5ad(*args, **kwargs):
+    adata = sc.read_h5ad(*args, **kwargs)
+    fadata = FateAnnData.from_anndata(adata)
+    return fadata

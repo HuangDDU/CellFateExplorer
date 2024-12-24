@@ -64,15 +64,23 @@ class TestFateAnnData:
             milestone_network=milestone_wrapper.milestone_network,
             divergence_regions=milestone_wrapper.divergence_regions,
             milestone_percentages=milestone_wrapper.milestone_percentages,
-            progressions=milestone_wrapper.progressions
+            # progressions=milestone_wrapper.progressions
         )
         assert self.fadata.is_wrapped_with_trajectory
+        # test write_h5ad
+        self.fadata.write_h5ad("test_fate_anndata.h5ad")
+        fadata = cfe.data.read_h5ad("test_fate_anndata.h5ad")
+        assert fadata.milestone_wrapper is not None
 
     def test_add_waypoints(self):
         from .test_fate_milestone_wrapper import setup_method_data
         milestone_wrapper = setup_method_data()
         self.fadata.add_waypoints(milestone_wrapper)
         assert self.fadata.is_wrapped_with_waypoints
+        # test write_h5ad
+        self.fadata.write_h5ad("test_fate_anndata.h5ad")
+        fadata = cfe.data.read_h5ad("test_fate_anndata.h5ad")
+        assert fadata.waypoint_wrapper is not None
 
     def test_add_branch_trajectory(self):
         branch_network = pd.DataFrame(

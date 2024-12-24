@@ -13,9 +13,9 @@
 |module|reference|
 | ---- | ---- |
 | [FateMethod](api/method/fate_method.md) | FateMethod |
-| [FunctionBackend](api/method/fate_function_backend.md) | FateMethod |
-| [CFEDockerBackend](api/method/fate_cfe_docker_backend.md) | FateMethod |
-| [DynverseDockerBackend](api/method/fate_dynverse_docker_backend.md) | FateMethod |
+| [FunctionBackend](api/method/fate_function_backend.md) | FunctionBackend |
+| [CFEDockerBackend](api/method/fate_cfe_docker_backend.md) | CFEDockerBackend |
+| [DynverseDockerBackend](api/method/fate_dynverse_docker_backend.md) | DynverseDockerBackend |
 
 ## Plot
 

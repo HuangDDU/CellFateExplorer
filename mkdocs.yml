@@ -5,6 +5,7 @@ repo_name: HuangDDU/CellFateExplorer
 nav:
   - Home: index.md
   - API: api.md
+  - Change log: change_log.md
 
 theme:
   name: material

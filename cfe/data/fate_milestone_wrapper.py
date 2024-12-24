@@ -147,9 +147,11 @@ class MilestoneWrapper(FateWrapper):
         # gather all cells to their nearest milestone
         pass
 
-    def to_hdf5(self, group):
-        # TODO : complete the write hdf5 implementation
-        ds = group.create_dataset("data", data=None)
+    # def to_hdf5(self, group):
+    #     # TODO : complete the write hdf5 implementation
+    #     ds = group.create_dataset("data", data=None)
+    #     # for k, v in self.items():
+    #     #     group.create_dataset(k, data=v)
 
     # @classmethod
     # def from_hdf5(cls, group):
