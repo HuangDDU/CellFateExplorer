@@ -6,5 +6,6 @@
 
 ## Toc
 
+- [Tutorial](./tutorial.md)
 - [API document](./api.md)
 - [Change log](./change_log.md)
