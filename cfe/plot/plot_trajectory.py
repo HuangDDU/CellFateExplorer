@@ -1,6 +1,7 @@
 from scipy.stats import norm
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 import scanpy as sc
 
@@ -14,6 +15,7 @@ def plot_trajectory(
         size_milestones: int = 30,
         size_transitions: int = 2,
         color_trajectory: str = None,
+        save: str = None,
         ** sc_pl_embedding_kwargs
 ) -> None:
     """Plot cell embedding and trajectory
@@ -71,6 +73,9 @@ def plot_trajectory(
             pass
         else:
             pass
+    if save is not None:
+        plt.savefig(save)
+    return ax
 
 
 def project_waypoints(

@@ -7,17 +7,17 @@
 ### File structure
 
 1. `cfe`: **source code**
-   - data:
+   - `data`:
      - base: FateAnnData.
      - two trajectory related wrapper: MilestoneWrapper, WaypointWrapper.
-   - method:
+   - `method`:
      - base: FateMethod.
      - three method backend: Function, CFE Docker, Dynverse Docker(based R).
-   - plot:
+   - `plot`:
      - plot_trajectory: plot embdding and trajectory
-   - util: common utils
-   - _logging.py: logging module
-   - _settings.py: settings module
+   - `util`: common utils
+   - `_logging.py`: logging module
+   - `_settings.py`: settings module
 2. `docs`: **document** based on **mkdocs**, link to [CellFateExplorer](https://cellfateexplorer-cellfateexplorer.readthedocs-hosted.com/en/latest//)
 3. `notebooks`: **jupyter notebook** for quickstart using Slingshot and PAGA
 4. `test`: **unit test** with case

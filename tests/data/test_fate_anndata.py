@@ -10,6 +10,8 @@ import scanpy as sc
 
 from ..test_util import compare_dataframes
 
+# test case for add_trajectory, add_waypoints
+
 
 def setup_method_data():
     counts = np.array([
@@ -29,7 +31,7 @@ def setup_method_data():
     fadata.var.index = ["g1", "g2"]
     fadata.layers["counts"] = counts
     fadata.layers["expression"] = counts.copy()
-    fadata.obsm["X_emb"] = counts.copy()
+    fadata.obsm["X_emb"] = counts.toarray().copy()
 
     return fadata
 
@@ -82,7 +84,7 @@ class TestFateAnnData:
         fadata = cfe.data.read_h5ad("test_fate_anndata.h5ad")
         assert fadata.waypoint_wrapper is not None
 
-    def test_add_branch_trajectory(self):
+    def test_add_trajectory_branch(self):
         branch_network = pd.DataFrame(
             columns=["from", "to"],
             data=[
@@ -115,7 +117,7 @@ class TestFateAnnData:
 
         self.fadata.add_trajectory_branch(branch_network, branch_progressions, branches)
 
-        # 预期构造结果
+        # expected results
         expected_milestone_network = pd.DataFrame(
             columns=["from", "to", "length", "directed"],
             data=[
@@ -139,6 +141,39 @@ class TestFateAnnData:
 
         assert compare_dataframes(self.fadata.cfe_dict["milestone_wrapper"]["milestone_network"], expected_milestone_network, on_columns=["from", "to"])
         assert compare_dataframes(self.fadata.cfe_dict["milestone_wrapper"]["progressions"], expected_progressions, on_columns=["cell_id", "from", "to"])
+
+    def test_add_trajectory_linear(self):
+        # TODO: linear
+        # new test case: pseudotime and FateAnnData
+        name = "test_add_trajectory_linear"
+        cell_ids = ["a", "b", "c", "d", "e", "f"]
+        pseudotime = [0.0, 0.1, 0.4, 0.5, 0.8, 1.0]
+
+        expression = np.tile(pseudotime, (2, 1)).T
+        fadata = cfe.data.FateAnnData(X=expression, name=name)
+        fadata.obs.index = cell_ids
+        fadata.layers["expression"] = expression.copy()
+
+        fadata.add_trajectory_linear(pseudotime)
+
+        expected_milestone_ids = ["milestone_begin", "milestone_end"]
+        expected_milestone_network = pd.DataFrame({
+            "from": "milestone_begin",
+            "to": "milestone_end",
+            "length": 1,
+            "directed": False,
+        }, index=[0])
+        expected_progressions = pd.DataFrame({
+            "cell_id": cell_ids,
+            "from": "milestone_begin",
+            "to": "milestone_end",
+            "percentage": pseudotime,
+        })
+
+        # 构造的milestone_network和progressions与预期对比
+        assert fadata.milestone_wrapper["id_list"] == expected_milestone_ids
+        assert fadata.milestone_wrapper["milestone_network"].equals(expected_milestone_network)
+        assert fadata.milestone_wrapper["progressions"].equals(expected_progressions)
 
 
 if __name__ == "__main__":

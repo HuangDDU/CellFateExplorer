@@ -1,5 +1,6 @@
-import networkx as nx
+import numpy as np
 import pandas as pd
+import networkx as nx
 import anndata as ad
 import scanpy as sc
 
@@ -34,6 +35,7 @@ class FateAnnData(ad.AnnData):
         self.prior_information = cfe_dict.get("prior_information", {})
         cfe_dict["prior_information"] = self.prior_information
 
+        # TODO: parse milestone_wrapper, waypoint_wrapper from dict, move to read_h5ad
         self.milestone_wrapper = cfe_dict.get("milestone_wrapper", None)
         self.waypoint_wrapper = cfe_dict.get("waypoint_wrapper", None)
 
@@ -110,13 +112,18 @@ class FateAnnData(ad.AnnData):
             trajectory_dict (dict): trajectory dict result based on specific trajectory types
         """
 
-        # TODO : 暂时只是paga
-        trajectory_type = "paga"
-        self.add_trajectory_branch(
-            branch_network=trajectory_dict["branch_network"],
-            branches=trajectory_dict["branches"],
-            branch_progressions=trajectory_dict["branch_progressions"]
-        )
+        # TODO: for more wrapper
+        if "pseudotime" in trajectory_dict.keys():
+            self.add_trajectory_linear(trajectory_dict["pseudotime"])
+        elif "branch_network" in trajectory_dict.keys():
+            self.add_trajectory_branch(
+                branch_network=trajectory_dict["branch_network"],
+                branches=trajectory_dict["branches"],
+                branch_progressions=trajectory_dict["branch_progressions"]
+            )
+        else:
+            # defult direct output
+            self.add_trajectory(**trajectory_dict)
 
     def add_waypoints(self, milestone_wrapper: MilestoneWrapper) -> None:
         """Create WaypointWrapper object
@@ -137,7 +144,7 @@ class FateAnnData(ad.AnnData):
             branch_progressions: pd.DataFrame,
             branches: pd.DataFrame
     ) -> None:
-        """Add branch trajectory,such as paga
+        """Add branch trajectory,such as PAGA
 
         ref: PyDynverse/pydynverse/wrap/wrap_add_branch_trajectory.add_branch_trajectory
 
@@ -189,6 +196,49 @@ class FateAnnData(ad.AnnData):
 
         self.add_trajectory(milestone_network=milestone_network, progressions=progressions)
 
+    def add_trajectory_linear(
+        self,
+        pseudotime: list,
+        directed: bool = False,
+        do_scale_minmax: bool = True,
+    ) -> None:
+        """add linear trajectory, such as Palantir, Cytotrace.
+
+        Args:
+            pseudotime (list): pseudotime sequence.
+        """
+        pseudotime = np.array(pseudotime)
+
+        # min-max scale pseudotime to [0, 1]
+        if do_scale_minmax:
+            pseudotime = (pseudotime - pseudotime.min()) / (pseudotime.max() - pseudotime.min())
+        else:
+            assert (pseudotime >= 0).all() and (pseudotime <= 1).all()
+        milestone_ids = ["milestone_begin", "milestone_end"]
+        # milestone_network datframe construction, length=1
+        milestone_network = pd.DataFrame({
+            "from": milestone_ids[0],
+            "to": milestone_ids[1],
+            "length": 1,
+            "directed": directed,
+        }, index=[0])  # all scalar, need "index" to show sample num
+        # progressions datafram construction， percentage=pseudotime
+        progressions = pd.DataFrame({
+            "cell_id": self.obs.index,
+            "from": milestone_ids[0],
+            "to": milestone_ids[1],
+            "percentage": pseudotime,
+        })
+        self.add_trajectory(
+            milestone_network=milestone_network,
+            divergence_regions=None,
+            progressions=progressions
+        )
+
+    def add_trajectory_velocity():
+        # TODO: add velocity trajectory, such as scVelo, VeloAE
+        pass
+
     def write_h5ad(self, *args, **kwargs):
         if self.cfe_dict.get("milestone_wrapper", None) is not None:
             self.cfe_dict["milestone_wrapper"] = dict(self.cfe_dict["milestone_wrapper"])
@@ -207,6 +257,11 @@ class FateAnnData(ad.AnnData):
 
 
 def read_h5ad(*args, **kwargs):
+    """_summary_
+
+    Returns:
+        _type_: _description_
+    """
     adata = sc.read_h5ad(*args, **kwargs)
     fadata = FateAnnData.from_anndata(adata)
     return fadata
