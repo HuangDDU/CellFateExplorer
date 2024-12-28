@@ -55,3 +55,6 @@ plugins:
             # show_source: false
           selection:
             docstring_style: google
+
+markdown_extensions:
+  - footnotes
