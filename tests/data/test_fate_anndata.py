@@ -51,6 +51,10 @@ class TestFateAnnData:
         fadata = cfe.data.FateAnnData.from_anndata(adata)
         assert fadata.id is not None
 
+    def test_read_dynverse_simulation_data(self):
+        fadata = cfe.data.FateAnnData.read_dynverse_simulation_data()
+        assert fadata.is_wrapped_with_trajectory
+
     def test_get_item(self):
         pass
 

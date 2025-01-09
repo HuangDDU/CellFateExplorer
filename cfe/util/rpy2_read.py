@@ -1,4 +1,5 @@
 # ref: https://github.com/dynverse/dynclipy/blob/master/dynclipy/read.py
+import numpy as np
 import rpy2.robjects as ro
 import rpy2.rinterface as rinterface
 
@@ -79,7 +80,19 @@ def convert_double(obj):
     if len(obj) == 1:
         return float(obj[0])
     else:
-        return [float(x) for x in obj]
+        if "matrix" in obj.rclass:
+            cell_ids = ro.r["rownames"](obj)
+            feature_ids = ro.r["colnames"](obj)
+            matrix = np.array([float(x) for x in obj]).reshape((len(cell_ids), len(feature_ids)))
+            matrix = csc_matrix(matrix)  # 转化为稀疏矩阵
+            # return {
+            #     "matrix":  matrix,
+            #     "cell_ids": cell_ids,
+            #     "feature_ids": feature_ids
+            # }
+            return matrix
+        else:
+            return [float(x) for x in obj]
 
 
 @ro.conversion.rpy2py.register(rinterface.BoolSexpVector)

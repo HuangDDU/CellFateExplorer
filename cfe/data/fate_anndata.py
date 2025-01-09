@@ -59,14 +59,65 @@ class FateAnnData(ad.AnnData):
 
         logger.debug("Create a FateAnnData object from an existing AnnData object.")
 
-        fadata = cls(name=adata.name if hasattr(adata, "name") else "FateAnnData",
-                     X=adata.X,
-                     obs=adata.obs,
-                     var=adata.var,
-                     uns=adata.uns,
-                     obsm=adata.obsm,
-                     varm=adata.varm,
-                     layers=adata.layers)
+        fadata = cls(
+            name=adata.name if hasattr(adata, "name") else "FateAnnData",
+            X=adata.X,
+            obs=adata.obs,
+            var=adata.var,
+            uns=adata.uns,
+            obsm=adata.obsm,
+            varm=adata.varm,
+            layers=adata.layers
+        )
+
+        return fadata
+
+    @classmethod
+    def read_dynverse_simulation_data(cls, data_filename="synthetic/dyntoy/bifurcating_1.rds", data_dir="/home/huang/RCode/scrna_tools/dynbenchmark/data"):
+        # read dynverse simulation data and create FateAnnData object
+        import rpy2.robjects as ro
+        from ..util import rpy2_read  # rpy2 data structure transfer automatically
+
+        r_script = f"""
+        dataset <- readRDS("{data_dir}/{data_filename}")
+        dataset
+        """
+        dataset = ro.r(r_script)
+
+        # crreate FateAnnData object base expression and count matrix
+        layers = {}
+        if "expression" in dataset:
+            X = dataset["expression"]
+            layers["expression"] = dataset["expression"]
+        if "count" in dataset:
+            X = dataset["count"]
+            layers["count"] = dataset["count"]
+        fadata = cls(name=dataset["id"], X=X)
+        fadata.layers = layers
+
+        # other Anndata attributes
+        # if dataset.has_key("cell_info"):
+        #     fadata.obs = dataset["cell_info"]
+        fadata.obs = dataset.get("cell_info", fadata.obs)  # equal to above
+        fadata.obs.index = dataset["cell_ids"]
+        fadata.var = dataset.get("feature_info", fadata.obs)
+        fadata.var.index = dataset.get("feature_ids", fadata.var.index)
+
+        # call FateAnnData object method
+        if "prior_information" in dataset:
+            fadata.add_prior_information(**dataset["prior_information"])
+        if "milestone_network" in dataset:
+            milestone_network = dataset["milestone_network"]
+            milestone_percentages = dataset["milestone_percentages"]
+            divergence_regions = dataset["divergence_regions"]
+            progressions = dataset["progressions"]
+            fadata.add_trajectory(
+                milestone_network=milestone_network,
+                divergence_regions=divergence_regions,
+                milestone_percentages=milestone_percentages,
+                # progressions=progressions # may cover milestone_percentages
+            )
+        # TODO: waypoint添加
 
         return fadata
 
