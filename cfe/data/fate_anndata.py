@@ -154,6 +154,7 @@ class FateAnnData(ad.AnnData):
         )
         self.milestone_wrapper = milestone_wrapper
         self.cfe_dict["milestone_wrapper"] = milestone_wrapper
+        # TODO: save multiple trajectory in cfe_dict
         self.is_wrapped_with_trajectory = True
 
     def add_trajectory_by_type(self, trajectory_dict: dict) -> None:

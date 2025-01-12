@@ -3,6 +3,7 @@ from typing import Callable
 import numpy as np
 import pandas as pd
 import networkx as nx
+import igraph as ig
 from sklearn.metrics.pairwise import pairwise_distances
 
 from ..util import random_time_string
@@ -117,7 +118,6 @@ class WaypointWrapper(FateWrapper):
         Returns:
             pd.DataFrame: distances dataframe
         """
-
         # attribute in the MilestoneWrapper
         cell_id_list = self.milestone_wrapper.cell_id_list
         milestone_id_list = self.milestone_wrapper.id_list
@@ -222,11 +222,7 @@ class WaypointWrapper(FateWrapper):
             # TODO: directed graph
             pass
 
-        # NOTE: 2. merge calculation
-        # merge two graph to one graph
-        # extract the shortest edge after merging, currently has little effect, may be useful for the ring graph
-        graph = pd.concat([milestone_network, cell_in_tent_distances]).groupby(["from", "to"]).agg({"length": "min"}).reset_index()
-        graph = nx.from_pandas_edgelist(graph, source="from", target="to", edge_attr="length")
+        # NOTE: 2. merge calculation(use igraph to accelerate compared to networkx)
         # select the shortest distance mode for subsequent directed graphs
         if directed or directed == "forward":
             mode = "out"
@@ -234,17 +230,12 @@ class WaypointWrapper(FateWrapper):
             mode = "in"
         else:
             mode = "all"
-        mode
-
-        # call dijkstra to calculate the relationship between waypoint and cell
-        out = pd.DataFrame(np.zeros((len(waypoint_id_list), len(cell_id_list))), index=waypoint_id_list, columns=cell_id_list)
-        for source in waypoint_id_list:
-            length_dict = nx.single_source_dijkstra_path_length(graph, source=source, weight="length")
-            for target in cell_id_list:
-                if target in length_dict:
-                    out.loc[source, target] = length_dict[target]
-                else:
-                    out.loc[source, target] = np.inf
+        # extract the shortest edge after merging, currently has little effect, may be useful for the ring graph
+        edgelist_df = pd.concat([milestone_network, cell_in_tent_distances]).groupby(["from", "to"]).agg({"length": "min"}).reset_index()
+        # merge two graph to one graph
+        gr = ig.Graph.TupleList(edgelist_df.values, edge_attrs=["length"])
+        shortest_paths = gr.shortest_paths(source=waypoint_id_list, target=cell_id_list, weights="length", mode=mode)
+        out = pd.DataFrame(shortest_paths, index=waypoint_id_list, columns=cell_id_list)
 
         # TODO: filter cells
         cell_ids_filtered_list = []

@@ -34,6 +34,7 @@ def plot_trajectory(
     # TODO: a fdata, many methods
     logger.debug("plot_trajectory")
 
+    # TODO: 添加milestone颜色
     # base embedding
     ax = sc.pl.embedding(fadata, basis=basis, **sc_pl_embedding_kwargs, show=False)
 

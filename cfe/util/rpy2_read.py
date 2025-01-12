@@ -83,7 +83,7 @@ def convert_double(obj):
         if "matrix" in obj.rclass:
             cell_ids = ro.r["rownames"](obj)
             feature_ids = ro.r["colnames"](obj)
-            matrix = np.array([float(x) for x in obj]).reshape((len(cell_ids), len(feature_ids)))
+            matrix = np.array([float(x) for x in obj]).reshape((len(feature_ids), len(cell_ids))).T  # matrix in R is arranged by column
             matrix = csc_matrix(matrix)  # 转化为稀疏矩阵
             # return {
             #     "matrix":  matrix,
