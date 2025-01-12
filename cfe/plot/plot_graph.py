@@ -6,10 +6,12 @@ import scanpy as sc
 import seaborn as sns
 
 from ..data import FateAnnData
+from .add_color import add_milestone_color, add_milestone_cell_color
 
 
 def plot_graph(
     fadata: FateAnnData,
+    color: str | list = "milestone",
     save: str = None
 ):
     """Plot DAG base on milestone network
@@ -30,8 +32,7 @@ def plot_graph(
     is_directed = milestone_network["directed"].any()
 
     # color and position fo milestone
-    # TODO: milestone颜色在setting里控制, 这里细胞颜色构造提取为单独函数
-    milestone_color_list = sns.color_palette("Set3")[:len(milestone_id_list)]  # color rgb
+    milestone_color_list = add_milestone_color(len(milestone_id_list))  # color rgb
     milestone_color_dict = dict(zip(milestone_id_list, milestone_color_list))
     G = nx.from_pandas_edgelist(
         milestone_network,
@@ -53,43 +54,30 @@ def plot_graph(
             ax=ax,
             )
 
-    # color and position fo cell
-    milestone_color_df = pd.DataFrame(milestone_color_dict, index=["r", "g", "b"]).T
-
-    def mix_color(mpg):
-        # mix related milestone color to get color for a cell
-        mpg_color = milestone_color_df.loc[mpg["milestone_id"]]
-        mix_color_array = mpg_color.apply(lambda rgb_channel: (rgb_channel.array * mpg["percentage"].array).sum())
-        return mix_color_array
-    cell_color_df = milestone_percentages.groupby("cell_id").apply(lambda mpg: mix_color(mpg))
-
+    # position fo cell
     milestone_emb_df = pd.DataFrame(milestone_emb_dict).T
 
     def mix_emb(mpg):
         # mix related milestone emb to get position for a cell
         mpg_emb = milestone_emb_df.loc[mpg["milestone_id"]]
         return mpg_emb.apply(lambda emb_dim: (emb_dim.array * mpg["percentage"].array)).sum()
-    cell_emb_df = milestone_percentages.groupby("cell_id").apply(lambda mpg: mix_emb(mpg))
-
     basis = "milestone_network_emb"
-    cell_color_key = "cell_color"
+    cell_emb_df = milestone_percentages.groupby("cell_id").apply(lambda mpg: mix_emb(mpg))
     fadata.obsm[basis] = cell_emb_df.loc[fadata.obs.index].values
-    fadata.obs[cell_color_key] = pd.Categorical(fadata.obs.index, categories=fadata.obs.index.tolist())
-    fadata.uns[f"{cell_color_key}_colors"] = rgb2hex(cell_color_df.loc[fadata.obs.index].values)
+
+    if color == "milestone":
+        # color of cells
+        cell_color_key = "milestone"
+        cell_color_df = add_milestone_cell_color(milestone_color_dict, milestone_percentages)
+        fadata.obs[cell_color_key] = pd.Categorical(fadata.obs.index, categories=fadata.obs.index.tolist())
+        fadata.uns[f"{cell_color_key}_colors"] = cell_color_df.loc[fadata.obs.index].values
 
     sc.pl.embedding(
         fadata,
         basis=basis,
-        color=cell_color_key,
-        ax=ax, title="",
+        color=color,
+        ax=ax,
+        title="",
         legend_loc=None,
         save=save
     )
-
-
-def rgb2hex(palette):
-    return [mcolors.to_hex(color) for color in palette]
-
-
-def hex2rgb(palette):
-    return [mcolors.to_rgb(color) for color in palette]

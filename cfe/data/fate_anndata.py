@@ -117,8 +117,10 @@ class FateAnnData(ad.AnnData):
                 milestone_percentages=milestone_percentages,
                 # progressions=progressions # may cover milestone_percentages
             )
-        # TODO: waypoint添加
 
+        # TODO: waypoint添加
+        if "grouping" in dataset:
+            fadata.obs["grouping"] = pd.Categorical(dataset["grouping"], dataset["group_ids"])
         return fadata
 
     def add_prior_information(self, **kwargs) -> None:

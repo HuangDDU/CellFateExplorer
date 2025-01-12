@@ -5,6 +5,7 @@ import os
 import matplotlib.pyplot as plt
 
 
+@pytest.mark.skipif(not cfe.settings.r_available, reason="R is not available")
 def test_plot_graph():
     fadata = cfe.data.FateAnnData.read_dynverse_simulation_data()
     cfe.plot.plot_graph(fadata)

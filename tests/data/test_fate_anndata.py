@@ -51,6 +51,7 @@ class TestFateAnnData:
         fadata = cfe.data.FateAnnData.from_anndata(adata)
         assert fadata.id is not None
 
+    @pytest.mark.skipif(not cfe.settings.r_available, reason="R is not available")
     def test_read_dynverse_simulation_data(self):
         fadata = cfe.data.FateAnnData.read_dynverse_simulation_data()
         assert fadata.is_wrapped_with_trajectory

@@ -137,6 +137,7 @@ class WaypointWrapper(FateWrapper):
         # remae all milestone ids to MILESTONE_ID
         def milestone_trafo_fun(x):
             return f"MILESTONE_{x}"
+        milestone_network = milestone_network.copy()  # don't affect the original milestone_network
         milestone_network["from"] = milestone_network["from"].apply(milestone_trafo_fun)
         milestone_network["to"] = milestone_network["to"].apply(milestone_trafo_fun)
         milestone_id_list = list(map(milestone_trafo_fun, milestone_id_list))
@@ -170,6 +171,7 @@ class WaypointWrapper(FateWrapper):
 
         # NetworkX for related data from edge DataFrame
         milestone_graph = nx.from_pandas_edgelist(milestone_network, source="from", target="to", edge_attr="length")
+        divergence_regions["is_start"] = divergence_regions["is_start"].astype(bool)  # ensure "is_start" column is bool
 
         # NOTE: 1. Calculate separately
         # calculate the distance between cells within the divergent
