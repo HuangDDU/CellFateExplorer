@@ -80,9 +80,10 @@ class TestFateAnnData:
         assert fadata.milestone_wrapper is not None
 
     def test_add_waypoints(self):
-        from .test_fate_milestone_wrapper import setup_method_data
-        milestone_wrapper = setup_method_data()
-        self.fadata.add_waypoints(milestone_wrapper)
+        # from .test_fate_milestone_wrapper import setup_method_data
+        # milestone_wrapper = setup_method_data()
+        self.test_add_trajectory()
+        self.fadata.add_waypoints()
         assert self.fadata.is_wrapped_with_waypoints
         # test write_h5ad
         self.fadata.write_h5ad("test_fate_anndata.h5ad")
@@ -148,7 +149,6 @@ class TestFateAnnData:
         assert compare_dataframes(self.fadata.cfe_dict["milestone_wrapper"]["progressions"], expected_progressions, on_columns=["cell_id", "from", "to"])
 
     def test_add_trajectory_linear(self):
-        # TODO: linear
         # new test case: pseudotime and FateAnnData
         name = "test_add_trajectory_linear"
         cell_ids = ["a", "b", "c", "d", "e", "f"]
@@ -179,6 +179,33 @@ class TestFateAnnData:
         assert fadata.milestone_wrapper["id_list"] == expected_milestone_ids
         assert fadata.milestone_wrapper["milestone_network"].equals(expected_milestone_network)
         assert fadata.milestone_wrapper["progressions"].equals(expected_progressions)
+
+    def test_add_trajectory_velocity(self):
+        # TODO
+        pass
+
+    def test_group_onto_trajectory_edges(self):
+        self.test_add_trajectory()  # reuse test case from test_add_trajectory
+        fadata = self.fadata
+
+        cluster_key = "group"
+        fadata.group_onto_trajectory_edges(cluster_key=cluster_key)
+        excepted_group = ["W->W", "W->X", "X->Z", "Z->Z", "X->Z", "Z->A"]
+
+        cluster_key = "group"
+        assert cluster_key in self.fadata.obs.columns
+        assert excepted_group == self.fadata.obs[cluster_key].tolist()
+
+    def test_group_onto_nearest_milestones(self):
+        self.test_add_trajectory()  # reuse test case from test_add_trajectory
+        fadata = self.fadata
+
+        cluster_key = "group"
+        fadata.group_onto_nearest_milestones(cluster_key=cluster_key)
+        excepted_group = ["W", "X", "X", "Z", "Z", "Z"]
+
+        assert cluster_key in self.fadata.obs.columns
+        assert excepted_group == self.fadata.obs[cluster_key].tolist()
 
 
 if __name__ == "__main__":

@@ -1,9 +1,9 @@
+import itertools
 import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
+import matplotlib.patches as patches
 import pandas as pd
 import networkx as nx
 import scanpy as sc
-import seaborn as sns
 
 from ..data import FateAnnData
 from .add_color import add_milestone_color, add_milestone_cell_color
@@ -29,6 +29,7 @@ def plot_graph(
     milestone_id_list = milestone_wrapper.id_list
     milestone_network = milestone_wrapper.milestone_network
     milestone_percentages = milestone_wrapper.milestone_percentages
+    divergence_regions = milestone_wrapper.divergence_regions
     is_directed = milestone_network["directed"].any()
 
     # color and position fo milestone
@@ -53,6 +54,9 @@ def plot_graph(
             arrowsize=30,   # TODO: adjusted by cell size
             ax=ax,
             )
+
+    # divergence regoin
+    plot_divergence_region(divergence_regions, milestone_emb_dict, ax)
 
     # position fo cell
     milestone_emb_df = pd.DataFrame(milestone_emb_dict).T
@@ -81,3 +85,52 @@ def plot_graph(
         legend_loc=None,
         save=save
     )
+
+
+def plot_divergence_region(divergence_regions, milestone_emb_dict, ax):
+    triangles = []
+    for did in divergence_regions["divergence_id"].unique():
+        rel_did = divergence_regions[divergence_regions["divergence_id"] == did]
+        fr = rel_did[rel_did["is_start"]]["milestone_id"].tolist()[0]  # only one start
+        tos = rel_did[~rel_did["is_start"]]["milestone_id"].tolist()
+        de_df = pd.DataFrame(itertools.product(tos, tos), columns=["node1", "node2"])
+        de_df = de_df[de_df["node1"] < de_df["node2"]]
+        de_df["divergence_id"] = did
+        de_df["start"] = fr
+        triangles.append(de_df)
+    triangles = pd.concat(triangles)
+    triangles = triangles[["divergence_id", "start", "node1", "node2"]]
+
+    # calc position
+    milestone_positions = pd.DataFrame(milestone_emb_dict).T
+    if (divergence_regions is not None) and (divergence_regions.shape[0] > 0):
+        # divergece end edge
+        divergence_edge_positions = triangles.rename(columns={"node1": "from", "node2": "to"})
+        divergence_edge_positions[["comp_1_from", "comp_2_from"]] = divergence_edge_positions["from"].apply(lambda x: milestone_positions.loc[x])
+        divergence_edge_positions[["comp_1_to", "comp_2_to"]] = divergence_edge_positions["to"].apply(lambda x: milestone_positions.loc[x])
+        # divergence polygon area
+        divergence_polygon_positions = triangles.copy()
+        divergence_polygon_positions["triangle_id"] = [f"triangle_{i}" for i in range(triangles.shape[0])]
+        divergence_polygon_positions = divergence_polygon_positions.melt(
+            id_vars=["triangle_id"],
+            value_vars=["start", "node1", "node2"],
+            var_name="triangle_part",
+            value_name="milestone_id"
+        )
+        divergence_polygon_positions[["comp_1", "comp_2"]] = divergence_polygon_positions["milestone_id"].apply(lambda x: milestone_positions.loc[x])
+    else:
+        divergence_edge_positions = pd.DataFrame(columns=["divergence_id", "start", "from", "to", "comp_1_from", "comp_2_from", "comp_1_to", "comp_2_to"])
+        divergence_polygon_positions = pd.DataFrame(columns=["triangle_id", "triangle_part", "milestone_id", "comp_1", "comp_2"])
+
+    # plot
+    dep = divergence_edge_positions
+    x_edges = dep[["comp_1_from", "comp_1_to"]].T.values  # 2*n
+    y_edges = dep[["comp_2_from", "comp_2_to"]].T.values  # 2*n
+    ax.plot(x_edges, y_edges, color="lightgrey", linestyle="--", linewidth=5)
+    dpp = divergence_polygon_positions
+    for triangle_id in dpp["triangle_id"].unique():
+        polygon_vertices = dpp[dpp["triangle_id"] == triangle_id][["comp_1", "comp_2"]].values  # extract polygon point
+        polygon = patches.Polygon(polygon_vertices, closed=True, fill=True, color="lightgrey", alpha=0.5)
+        ax.add_patch(polygon)
+
+    return ax

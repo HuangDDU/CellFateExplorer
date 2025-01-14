@@ -10,6 +10,19 @@ from ..data import FateAnnData
 from .add_color import add_milestone_color, add_milestone_cell_color
 
 
+def plot_trajectory_old(
+        fadata: FateAnnData,
+        color: str | list = "milestone",
+        basis: str = "umap",
+        size_milestones: int = 30,
+        size_transitions: int = 2,
+        color_trajectory: str = None,
+        save: str = None,
+        ** sc_pl_embedding_kwargs
+):
+    # Plot cell embedding with diffrent trajectory
+    pass
+
 def plot_trajectory(
         fadata: FateAnnData,
         color: str | list = "milestone",
@@ -20,7 +33,7 @@ def plot_trajectory(
         save: str = None,
         ** sc_pl_embedding_kwargs
 ) -> None:
-    """Plot cell embedding and trajectory
+    """Plot cell embedding and trajectory with diffrent color
 
      ref: pydynverse/plot/plot_dimred.plot_dimred
 

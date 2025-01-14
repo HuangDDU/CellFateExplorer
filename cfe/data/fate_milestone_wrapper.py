@@ -139,6 +139,32 @@ class MilestoneWrapper(FateWrapper):
         self.milestone_network_class = "N"
         self.directed = False
 
+    # def group_onto_trajectory_edges(self) -> pd.DataFrame:
+    #     """group cells to edges
+    #     ref: PyDynverse/pydynverse/wrap/wrap_add_grouping.group_onto_trajectory_edges
+
+    #     Returns:
+    #         pd.DataFrame: _description_
+    #     """
+    #     def get_trajectory_edges(x):
+    #         x = x.loc[x["percentage"].idxmax()]
+    #         return f"{x['from']}->{x['to']}"
+    #     group_df = self.progressions.groupby("cell_id").apply(get_trajectory_edges)
+    #     return group_df
+
+    # def group_onto_nearest_milestones(self) -> pd.DataFrame:
+    #     """ group cells to nearest milestones
+    #     ref: PyDynverse/pydynverse/wrap/wrap_add_grouping.group_onto_nearest_milestones
+
+    #     Returns:
+    #         pd.DataFrame: _description_
+    #     """
+
+    #     def get_nearest_milestone(x):
+    #         return x.loc[x["percentage"].idxmax(), "milestone_id"]
+    #     group_df = self.milestone_percentages.groupby("cell_id").apply(get_nearest_milestone)
+    #     return group_df
+
     def gather_cells_at_milestones(self) -> None:
         """Move cells to their nearest milestone
 

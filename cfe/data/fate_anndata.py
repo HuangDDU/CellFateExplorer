@@ -35,13 +35,19 @@ class FateAnnData(ad.AnnData):
         self.prior_information = cfe_dict.get("prior_information", {})
         cfe_dict["prior_information"] = self.prior_information
 
-        # TODO: parse milestone_wrapper, waypoint_wrapper from dict, move to read_h5ad
+        # milestone_wrapper and waypoint_wrapper for latest model
         self.milestone_wrapper = cfe_dict.get("milestone_wrapper", None)
         self.waypoint_wrapper = cfe_dict.get("waypoint_wrapper", None)
+        self.model_name = cfe_dict.get("model_name", "default_model_name")
+
+        # milestone_wrapper and waypoint_wrapper for all model
+        if "trajectory_history_dict" not in cfe_dict:
+            cfe_dict["trajectory_history_dict"] = {}
+        self.trajectory_history_dict = cfe_dict.get("trajectory_history_dict", {})
 
         # NOTE: Other attributes will be added later.
-        self.is_wrapped_with_trajectory = False
-        self.is_wrapped_with_waypoints = False
+        self.is_wrapped_with_trajectory = True if self.milestone_wrapper is not None else False
+        self.is_wrapped_with_waypoints = True if self.waypoint_wrapper is not None else False
 
         self.cfe_dict = cfe_dict
         self.uns["cfe"] = self.cfe_dict
@@ -89,9 +95,9 @@ class FateAnnData(ad.AnnData):
         if "expression" in dataset:
             X = dataset["expression"]
             layers["expression"] = dataset["expression"]
-        if "count" in dataset:
-            X = dataset["count"]
-            layers["count"] = dataset["count"]
+        if "counts" in dataset:
+            X = dataset["counts"]
+            layers["counts"] = dataset["counts"]
         fadata = cls(name=dataset["id"], X=X)
         fadata.layers = layers
 
@@ -130,6 +136,10 @@ class FateAnnData(ad.AnnData):
         """
         self.prior_information.update(kwargs)
 
+    def add_model_name(self, model_name: str):
+        self.model_name = model_name
+        self.cfe_dict["model_name"] = model_name
+
     def add_trajectory(
         self,
         milestone_network: pd.DataFrame,
@@ -154,6 +164,14 @@ class FateAnnData(ad.AnnData):
             milestone_percentages=milestone_percentages,
             progressions=progressions
         )
+
+        if self.milestone_wrapper is not None:
+            trajectory_history = {}
+            trajectory_history["milestone_wrapper"] = self.milestone_wrapper
+            if self.waypoint_wrapper is not None:
+                trajectory_history["waypoint_wrapper"] = self.waypoint_wrapper
+            self.trajectory_history_dict[self.model_name] = trajectory_history
+
         self.milestone_wrapper = milestone_wrapper
         self.cfe_dict["milestone_wrapper"] = milestone_wrapper
         # TODO: save multiple trajectory in cfe_dict
@@ -179,14 +197,12 @@ class FateAnnData(ad.AnnData):
             # defult direct output
             self.add_trajectory(**trajectory_dict)
 
-    def add_waypoints(self, milestone_wrapper: MilestoneWrapper) -> None:
+    def add_waypoints(self, milestone_wrapper: MilestoneWrapper = None) -> None:
         """Create WaypointWrapper object
 
-        Args:
-            milestone_wrapper (MilestoneWrapper): trajectory wrapper object
         """
         logger.debug("FateAnnData add_waypoints")
-
+        milestone_wrapper = milestone_wrapper if milestone_wrapper is not None else self.milestone_wrapper  # waypoint is based on milestone
         waypoint_wrapper = WaypointWrapper(milestone_wrapper)
         self.waypoint_wrapper = waypoint_wrapper
         self.cfe_dict["waypoint_wrapper"] = waypoint_wrapper
@@ -293,6 +309,32 @@ class FateAnnData(ad.AnnData):
         # TODO: add velocity trajectory, such as scVelo, VeloAE
         pass
 
+    def group_onto_trajectory_edges(self, cluster_key="_cfe_te_group"):
+        """group cells to edges
+        ref: PyDynverse/pydynverse/wrap/wrap_add_grouping.group_onto_trajectory_edges
+
+        Returns:
+            pd.DataFrame: _description_
+        """
+        def get_trajectory_edges(x):
+            x = x.loc[x["percentage"].idxmax()]
+            return f"{x['from']}->{x['to']}"
+        group_df = self.milestone_wrapper.progressions.groupby("cell_id").apply(get_trajectory_edges)
+        self.obs[cluster_key] = group_df.loc[self.obs.index]
+
+    def group_onto_nearest_milestones(self, cluster_key="_cfe_nm_group"):
+        """ group cells to nearest milestones
+        ref: PyDynverse/pydynverse/wrap/wrap_add_grouping.group_onto_nearest_milestones
+
+        Returns:
+            pd.DataFrame: _description_
+        """
+
+        def get_nearest_milestone(x):
+            return x.loc[x["percentage"].idxmax(), "milestone_id"]
+        group_df = self.milestone_wrapper.milestone_percentages.groupby("cell_id").apply(get_nearest_milestone)
+        self.obs[cluster_key] = group_df.loc[self.obs.index]
+
     def write_h5ad(self, *args, **kwargs):
         if self.cfe_dict.get("milestone_wrapper", None) is not None:
             self.cfe_dict["milestone_wrapper"] = dict(self.cfe_dict["milestone_wrapper"])
@@ -316,6 +358,7 @@ def read_h5ad(*args, **kwargs):
     Returns:
         _type_: _description_
     """
+    # TODO: milestone_wrapper和waypoint_wrapper的读取添加，目前丢失了
     adata = sc.read_h5ad(*args, **kwargs)
     fadata = FateAnnData.from_anndata(adata)
     return fadata
