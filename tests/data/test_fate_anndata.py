@@ -8,7 +8,7 @@ import pandas as pd
 import anndata as ad
 import scanpy as sc
 
-from ..test_util import compare_dataframes
+from ..test_util import compare_dataframes, compare_dataframes_closely
 
 # test case for add_trajectory, add_waypoints
 
@@ -55,6 +55,28 @@ class TestFateAnnData:
     def test_read_dynverse_simulation_data(self):
         fadata = cfe.data.FateAnnData.read_dynverse_simulation_data()
         assert fadata.is_wrapped_with_trajectory
+
+    def test_add_model_name(self):
+        # test in test_read_dynverse_simulation_data
+        pass
+
+    def test_get_all_model_name(self):
+        self.test_add_trajectory()
+        fadata = self.fadata
+        # first model
+        fadata.add_model_name("first model")
+        # second model
+        milestone_wrapper = fadata.milestone_wrapper
+        fadata.add_trajectory(
+            milestone_network=milestone_wrapper.milestone_network,
+            divergence_regions=milestone_wrapper.divergence_regions,
+            milestone_percentages=milestone_wrapper.milestone_percentages
+        )
+        from cfe.util import random_time_string
+        fadata.add_model_name(random_time_string("second model")) # radom_time_string for parsing
+
+        model_name_list = self.fadata.get_all_model_name()
+        assert sorted(model_name_list) == sorted(["first model", "second model"])
 
     def test_get_item(self):
         pass
@@ -206,6 +228,56 @@ class TestFateAnnData:
 
         assert cluster_key in self.fadata.obs.columns
         assert excepted_group == self.fadata.obs[cluster_key].tolist()
+
+    def test_simplify_trajectory(self):
+        # create FateAnnData object
+        id = "directed_linear"
+        cell_ids = ["a", "b", "c", "d", "e"]
+        milestone_network = pd.DataFrame(
+            data=[
+                ["A", "B", 1, True],
+                ["B", "C", 1, True],
+                ["C", "D", 1, True]
+            ],
+            columns=["from", "to", "length", "directed"],
+        )
+        progressions = pd.DataFrame(
+            data=[
+                ["a", "A", "B", 0.3],
+                ["b", "A", "B", 0.6],
+                ["c", "B", "C", 0.2],
+                ["d", "B", "C", 0.8],
+                ["e", "C", "D", 0.4],
+            ],
+            columns=["cell_id", "from", "to", "percentage"]
+        )
+        fadata = cfe.data.FateAnnData(name=id, X=np.zeros((len(cell_ids), 2)))
+        fadata.add_trajectory(
+            milestone_network=milestone_network,
+            progressions=progressions
+        )
+
+        # simpify trajectory
+        simplified_milestone_wrapper = fadata.simplify_trajectory()
+
+        # assert results
+        expected_milestone_network = pd.DataFrame(
+            data=[["A", "D", 3, True]],
+            columns=["from", "to", "length", "directed"],
+        )
+        expected_progressions = pd.DataFrame(
+            data=[
+                ["a", "A", "D", 0.1],
+                ["b", "A", "D", 0.2],
+                ["c", "A", "D", 0.4],
+                ["d", "A", "D", 0.6],
+                ["e", "A", "D", 0.8],
+            ],
+            columns=["cell_id", "from", "to", "percentage"]
+        )
+
+        assert simplified_milestone_wrapper.milestone_network.equals(expected_milestone_network)
+        assert compare_dataframes_closely(simplified_milestone_wrapper.progressions, expected_progressions, on_columns="percentage")
 
 
 if __name__ == "__main__":

@@ -38,7 +38,7 @@ class FateAnnData(ad.AnnData):
         # milestone_wrapper and waypoint_wrapper for latest model
         self.milestone_wrapper = cfe_dict.get("milestone_wrapper", None)
         self.waypoint_wrapper = cfe_dict.get("waypoint_wrapper", None)
-        self.model_name = cfe_dict.get("model_name", "default_model_name")
+        self.model_name = cfe_dict.get("model_name", "default")
 
         # milestone_wrapper and waypoint_wrapper for all model
         if "trajectory_history_dict" not in cfe_dict:
@@ -123,10 +123,11 @@ class FateAnnData(ad.AnnData):
                 milestone_percentages=milestone_percentages,
                 # progressions=progressions # may cover milestone_percentages
             )
+            fadata.add_model_name("ref")
 
-        # TODO: waypoint添加
         if "grouping" in dataset:
             fadata.obs["grouping"] = pd.Categorical(dataset["grouping"], dataset["group_ids"])
+        # TODO: waypoint add
         return fadata
 
     def add_prior_information(self, **kwargs) -> None:
@@ -139,6 +140,14 @@ class FateAnnData(ad.AnnData):
     def add_model_name(self, model_name: str):
         self.model_name = model_name
         self.cfe_dict["model_name"] = model_name
+
+    def get_all_model_name(self, parse=True):
+        from ..util import parse_random_time_string
+        model_name_list = [self.model_name] + list(self.trajectory_history_dict.keys())
+        if parse:
+            # parse model_name from random_time_string
+            model_name_list = [parse_random_time_string(i) for i in model_name_list]
+        return model_name_list
 
     def add_trajectory(
         self,
@@ -334,6 +343,67 @@ class FateAnnData(ad.AnnData):
             return x.loc[x["percentage"].idxmax(), "milestone_id"]
         group_df = self.milestone_wrapper.milestone_percentages.groupby("cell_id").apply(get_nearest_milestone)
         self.obs[cluster_key] = group_df.loc[self.obs.index]
+
+    def simplify_trajectory(self, model_name=None) -> MilestoneWrapper:
+        """
+        ref: PyDynverse/pydynverse/wrap/simplify_trajectory.py
+
+        Args:
+            model_name (_type_, optional): _description_. Defaults to None.
+
+        Returns:
+            MilestoneWrapper: simplified milestone_wrapper
+        """
+        if model_name is None or model_name == self.model_name:
+            milestone_wrapper = self.milestone_wrapper
+        else:
+            milestone_wrapper = self.trajectory_history_dict[model_name]["milestone_wrapper"]
+
+        milestone_network = milestone_wrapper.milestone_network
+        divergence_regions = milestone_wrapper.divergence_regions
+        progressions = milestone_wrapper.progressions
+
+        G = nx.from_pandas_edgelist(
+            milestone_network,
+            source="from",
+            target="to",
+            edge_attr=True,
+            create_using=nx.DiGraph if milestone_wrapper.directed else nx.Graph
+        )
+
+        # simplify cells
+        edge_points = progressions
+        edge_points.rename(columns={"cell_id": "id"}, inplace=True)
+        edge_points["id"] = edge_points["id"].apply(lambda x: f"SIMPLIFYCELL_{x}")
+
+        # core: simplify networkx network
+        out = self._simplify_networkx_network(
+            G,
+            force_keep=divergence_regions["milestone_id"],
+            edge_points=edge_points
+        )
+
+        # milestone data structure based on simplied network
+        G = out["gr"]
+        milestone_network = pd.DataFrame(G.edges(data=True), columns=["from", "to", "attributes"])
+        milestone_network = pd.concat([milestone_network.drop(columns=['attributes']), milestone_network["attributes"].apply(pd.Series)], axis=1)
+        milestone_network = milestone_network[["from", "to", "weight", "directed"]].rename(columns={"weight": "length"})
+
+        edge_points = out["edge_points"]
+        progressions = out["edge_points"][["id", "from", "to", "percentage"]].rename(columns={"id": "cell_id"})
+        progressions["cell_id"] = progressions["cell_id"].apply(lambda x: x.replace("SIMPLIFYCELL_", ""))
+
+        simplified_milestone_wrapper = MilestoneWrapper(
+            milestone_network=milestone_network,
+            divergence_regions=divergence_regions,
+            progressions=progressions,
+        )
+        return simplified_milestone_wrapper
+
+    def _simplify_networkx_network(self, G, force_keep, edge_points):
+        # copy from: PyDynverse/pydynverse/wrap/simplify_networkx_network.py
+        from ._simplify_networkx_network import simplify_networkx_network as snn
+        return snn(G, force_keep=force_keep, edge_points=edge_points)
 
     def write_h5ad(self, *args, **kwargs):
         if self.cfe_dict.get("milestone_wrapper", None) is not None:

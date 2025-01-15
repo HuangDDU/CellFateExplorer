@@ -61,7 +61,7 @@ class MilestoneWrapper(FateWrapper):
 
         # self.classify_milestone_network()
         self.milestone_network_class = "N"
-        self.directed = False
+        self.directed = milestone_network["directed"].any()
 
     @staticmethod
     def convert_milestone_percentages_to_progressions(
