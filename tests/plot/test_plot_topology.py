@@ -6,10 +6,11 @@ import matplotlib.pyplot as plt
 
 from .test_plot_trajectory import get_plot_fadata
 
-def test_plot_graph():
+
+def test_plot_topology():
     fadata = get_plot_fadata()
-    cfe.plot.plot_graph(fadata)
-    plt.savefig(f"{os.path.dirname(__file__)}/img/test_plot_graph.png")
+    cfe.plot.plot_topology(fadata)
+    plt.savefig(f"{os.path.dirname(__file__)}/img/test_plot_topology.png")
 
 
 if __name__ == "__main__":
