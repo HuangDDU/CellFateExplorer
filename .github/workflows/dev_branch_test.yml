@@ -47,8 +47,8 @@ jobs:
   
     - name: Install dependencies
       run: |
-        pwd
-        conda env update --file ../../environment.yml --name base
+        ls
+        conda env update --file environment.yaml --name base
 
     - name: Lint with flake8
       run: |
@@ -64,6 +64,6 @@ jobs:
        
     - name: Test with pytest
       run: |
-        mkdir -p ../../test/plot/img
+        mkdir -p ./test/plot/img
         conda install pytest
         pytest
