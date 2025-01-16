@@ -90,5 +90,5 @@ class FateMethod():
             parameters (dict, optional): _description_. Defaults to None.
         """
         # logger.debug("FateMethod infer_trajectory")
-        self.method_backend.run(fadata, parameters)
         fadata.add_model_name(self.id)
+        self.method_backend.run(fadata, parameters)

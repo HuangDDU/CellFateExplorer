@@ -12,6 +12,7 @@ from .add_color import add_milestone_color, add_milestone_cell_color
 def plot_graph(
     fadata: FateAnnData,
     color: str | list = "milestone",
+    ax = None,
     save: str = None
 ):
     """Plot DAG base on milestone network
@@ -23,6 +24,7 @@ def plot_graph(
     Returns:
         _type_: _description_
     """
+    ax = plt.subplots(1, 1)[1] if ax is None else ax
 
     # extract milestone network
     milestone_wrapper = fadata.milestone_wrapper
@@ -43,7 +45,7 @@ def plot_graph(
         create_using=nx.DiGraph if is_directed else nx.Graph
     )
     milestone_emb_dict = nx.nx_agraph.graphviz_layout(G, prog="dot")  # position
-    ax = plt.subplots(1, 1)[1]
+    
     nx.draw(G,
             milestone_emb_dict,
             with_labels=True,
@@ -83,7 +85,8 @@ def plot_graph(
         ax=ax,
         title="",
         legend_loc=None,
-        save=save
+        save=save,
+        show=False,
     )
 
 

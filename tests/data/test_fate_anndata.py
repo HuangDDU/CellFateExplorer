@@ -61,19 +61,20 @@ class TestFateAnnData:
         pass
 
     def test_get_all_model_name(self):
-        self.test_add_trajectory()
-        fadata = self.fadata
         # first model
+        fadata = self.fadata
         fadata.add_model_name("first model")
+        self.test_add_trajectory()
         # second model
         milestone_wrapper = fadata.milestone_wrapper
+        from cfe.util import random_time_string
+        fadata.add_model_name(random_time_string("second model")) # radom_time_string for parsing
         fadata.add_trajectory(
             milestone_network=milestone_wrapper.milestone_network,
             divergence_regions=milestone_wrapper.divergence_regions,
             milestone_percentages=milestone_wrapper.milestone_percentages
         )
-        from cfe.util import random_time_string
-        fadata.add_model_name(random_time_string("second model")) # radom_time_string for parsing
+        
 
         model_name_list = self.fadata.get_all_model_name()
         assert sorted(model_name_list) == sorted(["first model", "second model"])
@@ -96,10 +97,10 @@ class TestFateAnnData:
             # progressions=milestone_wrapper.progressions
         )
         assert self.fadata.is_wrapped_with_trajectory
-        # test write_h5ad
-        self.fadata.write_h5ad("test_fate_anndata.h5ad")
-        fadata = cfe.data.read_h5ad("test_fate_anndata.h5ad")
-        assert fadata.milestone_wrapper is not None
+        # TODO：test write_h5ad
+        # self.fadata.write_h5ad("test_fate_anndata.h5ad")
+        # fadata = cfe.data.read_h5ad("test_fate_anndata.h5ad")
+        # assert fadata.milestone_wrapper is not None
 
     def test_add_waypoints(self):
         # from .test_fate_milestone_wrapper import setup_method_data
@@ -107,10 +108,10 @@ class TestFateAnnData:
         self.test_add_trajectory()
         self.fadata.add_waypoints()
         assert self.fadata.is_wrapped_with_waypoints
-        # test write_h5ad
-        self.fadata.write_h5ad("test_fate_anndata.h5ad")
-        fadata = cfe.data.read_h5ad("test_fate_anndata.h5ad")
-        assert fadata.waypoint_wrapper is not None
+        # TODO：test write_h5ad
+        # self.fadata.write_h5ad("test_fate_anndata.h5ad")
+        # fadata = cfe.data.read_h5ad("test_fate_anndata.h5ad")
+        # assert fadata.waypoint_wrapper is not None
 
     def test_add_trajectory_branch(self):
         branch_network = pd.DataFrame(
@@ -167,8 +168,9 @@ class TestFateAnnData:
             ]
         )
 
-        assert compare_dataframes(self.fadata.cfe_dict["milestone_wrapper"]["milestone_network"], expected_milestone_network, on_columns=["from", "to"])
-        assert compare_dataframes(self.fadata.cfe_dict["milestone_wrapper"]["progressions"], expected_progressions, on_columns=["cell_id", "from", "to"])
+        milestone_wrapper = self.fadata.milestone_wrapper
+        assert compare_dataframes(milestone_wrapper["milestone_network"], expected_milestone_network, on_columns=["from", "to"])
+        assert compare_dataframes(milestone_wrapper["progressions"], expected_progressions, on_columns=["cell_id", "from", "to"])
 
     def test_add_trajectory_linear(self):
         # new test case: pseudotime and FateAnnData

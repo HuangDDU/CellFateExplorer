@@ -5,7 +5,7 @@ from .cluster_metric import calculate_mapping_branches, calculate_mapping_milest
 def calculate_metrics(
         fadata,
         now_model=None,
-        ref_model="default",
+        ref_model=None,
         metrics=["isomorphic"]
 ):
     summary_dict = {}

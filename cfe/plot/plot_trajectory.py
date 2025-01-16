@@ -13,7 +13,6 @@ from .add_color import add_milestone_color, add_milestone_cell_color
 def plot_trajectory(
         fadata: FateAnnData,
         color: str | list = "milestone",
-        model: list = None,  # if None plot now model trajectory result, else plot multiple trajectories in fadata.trajectory_history_dict
         basis: str = "umap",
         size_milestones: int = 30,
         size_transitions: int = 2,
@@ -21,7 +20,7 @@ def plot_trajectory(
         save: str = None,
         ** sc_pl_embedding_kwargs
 ) -> None:
-    """Plot cell embedding and trajectory with diffrent color
+    """Plot cell embedding and trajectory with different color for now model by fadata.model_name
 
      ref: pydynverse/plot/plot_dimred.plot_dimred
 

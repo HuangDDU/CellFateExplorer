@@ -36,8 +36,6 @@ class FateAnnData(ad.AnnData):
         cfe_dict["prior_information"] = self.prior_information
 
         # milestone_wrapper and waypoint_wrapper for latest model
-        self.milestone_wrapper = cfe_dict.get("milestone_wrapper", None)
-        self.waypoint_wrapper = cfe_dict.get("waypoint_wrapper", None)
         self.model_name = cfe_dict.get("model_name", "default")
 
         # milestone_wrapper and waypoint_wrapper for all model
@@ -46,11 +44,47 @@ class FateAnnData(ad.AnnData):
         self.trajectory_history_dict = cfe_dict.get("trajectory_history_dict", {})
 
         # NOTE: Other attributes will be added later.
-        self.is_wrapped_with_trajectory = True if self.milestone_wrapper is not None else False
-        self.is_wrapped_with_waypoints = True if self.waypoint_wrapper is not None else False
+        self.is_wrapped_with_trajectory = False
+        self.is_wrapped_with_waypoints = False
 
         self.cfe_dict = cfe_dict
         self.uns["cfe"] = self.cfe_dict
+
+    @property
+    def milestone_wrapper(self):
+        # return self._milestone_wrapper
+        model_dict = self.cfe_dict["trajectory_history_dict"].get(self.model_name, None)
+        if model_dict is not None:
+            return model_dict.get("milestone_wrapper")
+        else:
+            return None
+
+    @milestone_wrapper.setter
+    def milestone_wrapper(self, value):
+        # self._milestone_wrapper = value
+        model_dict = self.cfe_dict["trajectory_history_dict"].get(self.model_name, None)
+        if model_dict is not None:
+            model_dict["milestone_wrapper"] = value
+        else:
+            self.cfe_dict["trajectory_history_dict"][self.model_name] = {"milestone_wrapper": value}
+
+    @property
+    def waypoint_wrapper(self):
+        # return self._waypoint_wrapper
+        model_dict = self.cfe_dict["trajectory_history_dict"].get(self.model_name, None)
+        if model_dict is not None:
+            return model_dict.get("waypoint_wrapper")
+        else:
+            return None
+
+    @waypoint_wrapper.setter
+    def waypoint_wrapper(self, value):
+        # self._waypoint_wrapper = value
+        model_dict = self.cfe_dict["trajectory_history_dict"].get(self.model_name, None)
+        if model_dict is not None:
+            model_dict["waypoint_wrapper"] = value
+        else:
+            self.cfe_dict["trajectory_history_dict"][self.model_name] = {"waypoint_wrapper": value}
 
     @classmethod
     def from_anndata(cls, adata: ad.AnnData) -> "FateAnnData":
@@ -117,13 +151,13 @@ class FateAnnData(ad.AnnData):
             milestone_percentages = dataset["milestone_percentages"]
             divergence_regions = dataset["divergence_regions"]
             progressions = dataset["progressions"]
+            fadata.add_model_name("ref")
             fadata.add_trajectory(
                 milestone_network=milestone_network,
                 divergence_regions=divergence_regions,
                 milestone_percentages=milestone_percentages,
                 # progressions=progressions # may cover milestone_percentages
             )
-            fadata.add_model_name("ref")
 
         if "grouping" in dataset:
             fadata.obs["grouping"] = pd.Categorical(dataset["grouping"], dataset["group_ids"])
@@ -140,10 +174,14 @@ class FateAnnData(ad.AnnData):
     def add_model_name(self, model_name: str):
         self.model_name = model_name
         self.cfe_dict["model_name"] = model_name
+        self.trajectory_history_dict[self.model_name] = {}
 
     def get_all_model_name(self, parse=True):
         from ..util import parse_random_time_string
-        model_name_list = [self.model_name] + list(self.trajectory_history_dict.keys())
+
+        model_name_list = list(self.trajectory_history_dict.keys())
+        if self.model_name not in self.trajectory_history_dict:
+            model_name_list = [self.model_name] + model_name_list
         if parse:
             # parse model_name from random_time_string
             model_name_list = [parse_random_time_string(i) for i in model_name_list]
@@ -174,17 +212,20 @@ class FateAnnData(ad.AnnData):
             progressions=progressions
         )
 
-        if self.milestone_wrapper is not None:
-            trajectory_history = {}
-            trajectory_history["milestone_wrapper"] = self.milestone_wrapper
-            if self.waypoint_wrapper is not None:
-                trajectory_history["waypoint_wrapper"] = self.waypoint_wrapper
-            self.trajectory_history_dict[self.model_name] = trajectory_history
+        # if self.milestone_wrapper is not None:
+        #     trajectory_history = {}
+        #     trajectory_history["milestone_wrapper"] = self.milestone_wrapper
+        #     if self.waypoint_wrapper is not None:
+        #         trajectory_history["waypoint_wrapper"] = self.waypoint_wrapper
+        #     self.trajectory_history_dict[self.model_name] = trajectory_history
 
         self.milestone_wrapper = milestone_wrapper
-        self.cfe_dict["milestone_wrapper"] = milestone_wrapper
         # TODO: save multiple trajectory in cfe_dict
         self.is_wrapped_with_trajectory = True
+
+        if self.model_name not in self.trajectory_history_dict:
+            self.trajectory_history_dict[self.model_name] = {}
+        self.trajectory_history_dict[self.model_name]["milestone_wrapper"] = milestone_wrapper
 
     def add_trajectory_by_type(self, trajectory_dict: dict) -> None:
         """Call the trajectory addition method based on specific trajectory types
@@ -216,6 +257,10 @@ class FateAnnData(ad.AnnData):
         self.waypoint_wrapper = waypoint_wrapper
         self.cfe_dict["waypoint_wrapper"] = waypoint_wrapper
         self.is_wrapped_with_waypoints = True
+
+        if self.model_name not in self.trajectory_history_dict:
+            self.trajectory_history_dict[self.model_name] = {}
+        self.trajectory_history_dict[self.model_name]["waypoint_wrapper"] = waypoint_wrapper
 
     def add_trajectory_branch(
             self,
@@ -344,8 +389,8 @@ class FateAnnData(ad.AnnData):
         group_df = self.milestone_wrapper.milestone_percentages.groupby("cell_id").apply(get_nearest_milestone)
         self.obs[cluster_key] = group_df.loc[self.obs.index]
 
-    def simplify_trajectory(self, model_name=None) -> MilestoneWrapper:
-        """
+    def simplify_trajectory(self, model_name="default") -> MilestoneWrapper:
+        """ simplify trajectory for metric comparison
         ref: PyDynverse/pydynverse/wrap/simplify_trajectory.py
 
         Args:
@@ -354,10 +399,10 @@ class FateAnnData(ad.AnnData):
         Returns:
             MilestoneWrapper: simplified milestone_wrapper
         """
-        if model_name is None or model_name == self.model_name:
-            milestone_wrapper = self.milestone_wrapper
-        else:
+        if model_name in self.trajectory_history_dict:
             milestone_wrapper = self.trajectory_history_dict[model_name]["milestone_wrapper"]
+        else:
+            raise ValueError(f"model '{model_name}' not found in trajectory_history_dict")
 
         milestone_network = milestone_wrapper.milestone_network
         divergence_regions = milestone_wrapper.divergence_regions
@@ -406,13 +451,24 @@ class FateAnnData(ad.AnnData):
         return snn(G, force_keep=force_keep, edge_points=edge_points)
 
     def write_h5ad(self, *args, **kwargs):
-        if self.cfe_dict.get("milestone_wrapper", None) is not None:
-            self.cfe_dict["milestone_wrapper"] = dict(self.cfe_dict["milestone_wrapper"])
-        if self.cfe_dict.get("waypoint_wrapper", None) is not None:
-            self.cfe_dict["waypoint_wrapper"] = dict(self.cfe_dict["waypoint_wrapper"])
-            self.cfe_dict["waypoint_wrapper"]["milestone_wrapper"] = None  # milestone_wrapper is redundent
-            waypoints = self.cfe_dict["waypoint_wrapper"]["waypoints"]
-            self.cfe_dict["waypoint_wrapper"]["waypoints"] = waypoints.fillna("")  # "" replace None
+        # if self.cfe_dict.get("milestone_wrapper", None) is not None:
+        #     self.cfe_dict["milestone_wrapper"] = dict(self.cfe_dict["milestone_wrapper"])
+        # if self.cfe_dict.get("waypoint_wrapper", None) is not None:
+        #     self.cfe_dict["waypoint_wrapper"] = dict(self.cfe_dict["waypoint_wrapper"])
+        #     self.cfe_dict["waypoint_wrapper"]["milestone_wrapper"] = None  # milestone_wrapper is redundent
+        #     waypoints = self.cfe_dict["waypoint_wrapper"]["waypoints"]
+        #     self.cfe_dict["waypoint_wrapper"]["waypoints"] = waypoints.fillna("")  # "" replace None
+        trajectory_history_dict = self.trajectory_history_dict
+        for model_name, trajectory in trajectory_history_dict.items():
+            if "milestone_wrapper" in trajectory:
+                milestone_wrapper = dict(trajectory["milestone_wrapper"])
+                self.trajectory_history_dict[model_name]["milestone_wrapper"] = milestone_wrapper
+            if "waypoint_wrapper" in trajectory:
+                waypoint_wrapper = trajectory["waypoint_wrapper"]
+                waypoint_wrapper["milestone_wrapper"] = None  # milestone_wrapper is redundent
+                waypoint_wrapper["waypoints"] = waypoint_wrapper["waypoints"].fillna("")  # "" replace None
+                self.trajectory_history_dict[model_name]["waypoint_wrapper"] = milestone_wrapper
+
         return super().write_h5ad(*args, **kwargs)
 
     def __getitem__(self, key):
@@ -428,7 +484,7 @@ def read_h5ad(*args, **kwargs):
     Returns:
         _type_: _description_
     """
-    # TODO: milestone_wrapper和waypoint_wrapper的读取添加，目前丢失了
+    # TODO: milestone_wrapper和waypoint_wrapper的读取添加，需要字典解析
     adata = sc.read_h5ad(*args, **kwargs)
     fadata = FateAnnData.from_anndata(adata)
     return fadata

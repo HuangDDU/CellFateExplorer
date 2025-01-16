@@ -13,6 +13,7 @@ def test_calculate_metrics():
     fadata = cfe.data.FateAnnData(name=id, X=np.zeros((len(cell_ids), 2)))
 
     # trajectory1: ref model
+    fadata.add_model_name("ref")
     milestone_network = pd.DataFrame(
         data=[
             ["A", "B", 1, True],
@@ -32,9 +33,9 @@ def test_calculate_metrics():
         columns=["cell_id", "from", "to", "percentage"]
     )
     fadata.add_trajectory(milestone_network=milestone_network, progressions=progressions)
-    fadata.add_model_name("ref")
 
     # trajectory2: new model
+    fadata.add_model_name("new")
     milestone_network = pd.DataFrame(
         data=[
             ["A", "B", 1, True],
@@ -54,10 +55,9 @@ def test_calculate_metrics():
         columns=["cell_id", "from", "to", "percentage"]
     )
     fadata.add_trajectory(milestone_network=milestone_network, progressions=progressions)
-    fadata.add_model_name("new")
 
-    summary_dict_self = cfe.metric.calculate_metrics(fadata, ref_model="new")  # calculate metric with self, max metric value
-    summary_dict = cfe.metric.calculate_metrics(fadata, ref_model="ref")  # calculate metric with ref
+    summary_dict_self = cfe.metric.calculate_metrics(fadata, now_model="new", ref_model="new")  # calculate metric with self, max metric value
+    summary_dict = cfe.metric.calculate_metrics(fadata, now_model="new", ref_model="ref")  # calculate metric with ref
     assert summary_dict_self["isomorphic"] == 1
     assert summary_dict["isomorphic"] == 0
 
