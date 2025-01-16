@@ -28,37 +28,35 @@ jobs:
       with:
         python-version: "3.10"
 
-    - name: check Docker R Python version
+    - name: Add conda to system path
+      run: |
+        # $CONDA is an environment variable pointing to the root of the miniconda directory
+        echo $CONDA/bin >> $GITHUB_PATH
+
+    - name: Check Docker R Python version
       run: |
         docker --version
         R --version
         python --version
         docker pull  huangzhaoyang/cf_paga:0.0.1
+
     - name: Install Graphviz
       run: |
         sudo apt-get update
         sudo apt-get install -y graphviz
   
-
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install flake8 autopep8 pytest
-        pip install rpy2==3.3.0 # extracted from requirement.txt
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-        
+        conda env update --file environment.yml --name base
+
     - name: Lint with flake8
       run: |
+        conda install flake8
         # stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 300 chars wide
         flake8 --count --exit-zero --max-complexity=10 --max-line-length=300 --ignore E714 --statistics  cfe/* tests/*
 
-    # - name: Lint with autopep8
-    #   run: |
-    #      autopep8 --diff --recursive  cfe/* tests/*
-
-    # ensure that the project root is in the PYTHONPATH
     - name: Add project root to PYTHONPATH
       run: |
        PYTHONPATH="${GITHUB_WORKSPACE}:${PYTHONPATH}"
@@ -66,4 +64,5 @@ jobs:
     - name: Test with pytest
       run: |
         mkdir -p ./plot/img
+        conda install pytest
         pytest
