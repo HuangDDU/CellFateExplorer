@@ -12,8 +12,8 @@ from .add_color import add_milestone_color, add_milestone_cell_color
 def plot_graph(
     fadata: FateAnnData,
     color: str | list = "milestone",
-    ax = None,
-    save: str = None
+    nx_draw_kwrags={},
+    sc_pl_embedding_kwargs={},
 ):
     """Plot DAG base on milestone network
 
@@ -24,7 +24,6 @@ def plot_graph(
     Returns:
         _type_: _description_
     """
-    ax = plt.subplots(1, 1)[1] if ax is None else ax
 
     # extract milestone network
     milestone_wrapper = fadata.milestone_wrapper
@@ -45,20 +44,6 @@ def plot_graph(
         create_using=nx.DiGraph if is_directed else nx.Graph
     )
     milestone_emb_dict = nx.nx_agraph.graphviz_layout(G, prog="dot")  # position
-    
-    nx.draw(G,
-            milestone_emb_dict,
-            with_labels=True,
-            node_color=[milestone_color_dict[node] for node in G.nodes],
-            width=5,  # TODO: adjusted by cell size
-            edge_color="gray",
-            arrowstyle="simple",
-            arrowsize=30,   # TODO: adjusted by cell size
-            ax=ax,
-            )
-
-    # divergence regoin
-    plot_divergence_region(divergence_regions, milestone_emb_dict, ax)
 
     # position fo cell
     milestone_emb_df = pd.DataFrame(milestone_emb_dict).T
@@ -71,23 +56,56 @@ def plot_graph(
     cell_emb_df = milestone_percentages.groupby("cell_id").apply(lambda mpg: mix_emb(mpg))
     fadata.obsm[basis] = cell_emb_df.loc[fadata.obs.index].values
 
-    if color == "milestone":
+    if "milestone" in color:
         # color of cells
         cell_color_key = "milestone"
         cell_color_df = add_milestone_cell_color(milestone_color_dict, milestone_percentages)
         fadata.obs[cell_color_key] = pd.Categorical(fadata.obs.index, categories=fadata.obs.index.tolist())
         fadata.uns[f"{cell_color_key}_colors"] = cell_color_df.loc[fadata.obs.index].values
 
-    sc.pl.embedding(
+    # plot
+    # zorder: 1: line, 2: cell, 3: milestone
+    ax_list = sc.pl.embedding(
         fadata,
         basis=basis,
         color=color,
-        ax=ax,
-        title="",
-        legend_loc=None,
-        save=save,
         show=False,
-    )
+        zorder=2,
+        **sc_pl_embedding_kwargs
+    )  # first plot embedding to get ax_list
+    ax_list = ax_list if isinstance(ax_list, list) else [ax_list]
+    color = color if isinstance(color, list) else [color]
+    for i in range(len(color)):
+        ax = ax_list[i]
+        c = color[i]
+        if c == "milestone":
+            ax.legend().remove() # remove legend for color with milestone , but it waste time for show and remove 
+
+        nx.draw(G,
+                milestone_emb_dict,
+                with_labels=True,
+                node_color=[milestone_color_dict[node] for node in G.nodes],
+                width=5,  # TODO: adjusted by cell size
+                edge_color="gray",
+                arrowstyle="simple",
+                arrowsize=30,   # TODO: adjusted by cell size
+                ax=ax,
+                **nx_draw_kwrags,
+                )
+        plot_divergence_region(divergence_regions, milestone_emb_dict, ax=ax)  # divergence regoin
+
+        
+
+        # tmp_kwargs = sc_pl_embedding_kwargs.copy()
+        # tmp_kwargs["legend_loc"] = None if c == "milestone" else tmp_kwargs.get("legend_loc", None)
+        # sc.pl.embedding(
+        #     fadata,
+        #     basis=basis,
+        #     color=c,
+        #     ax=ax,
+        #     legend_loc=None,
+        #     # **tmp_kwargs
+        # )  # second plot embedding to put embbeding on top graph layer
 
 
 def plot_divergence_region(divergence_regions, milestone_emb_dict, ax):
@@ -129,7 +147,7 @@ def plot_divergence_region(divergence_regions, milestone_emb_dict, ax):
     dep = divergence_edge_positions
     x_edges = dep[["comp_1_from", "comp_1_to"]].T.values  # 2*n
     y_edges = dep[["comp_2_from", "comp_2_to"]].T.values  # 2*n
-    ax.plot(x_edges, y_edges, color="lightgrey", linestyle="--", linewidth=5)
+    ax.plot(x_edges, y_edges, color="lightgrey", linestyle="--", linewidth=5, zorder=1)
     dpp = divergence_polygon_positions
     for triangle_id in dpp["triangle_id"].unique():
         polygon_vertices = dpp[dpp["triangle_id"] == triangle_id][["comp_1", "comp_2"]].values  # extract polygon point

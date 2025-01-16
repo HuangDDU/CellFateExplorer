@@ -45,7 +45,7 @@ def plot_trajectory(
         fadata.uns["milestone_colors"] = cell_color_df.loc[fadata.obs.index].values
 
     # base embedding
-    ax_list = sc.pl.embedding(fadata, color=color, basis=basis, **sc_pl_embedding_kwargs, legend_loc=None, show=False)
+    ax_list = sc.pl.embedding(fadata, color=color, basis=basis, **sc_pl_embedding_kwargs, show=False)
 
     # project waypoint to embedding space
     cell_positions = pd.DataFrame(data=fadata.obsm[f"X_{basis}"][:, :2], columns=["comp_1", "comp_2"])
@@ -57,10 +57,14 @@ def plot_trajectory(
     milestone_positions = wp_segments[wp_segments["milestone_id"].apply(lambda x: x is not None)]  # only save waypoint on mileston
 
     # plot waypoint curve
-    if not isinstance(ax_list, list):
-        # only one color key
-        ax_list = [ax_list]
-    for ax in ax_list:
+    ax_list = ax_list if isinstance(ax_list, list) else [ax_list]
+    color = color if isinstance(color, list) else [color]
+    for i in range(len(color)):
+        ax = ax_list[i]
+        c = color[i]
+        if c == "milestone":
+            ax.legend().remove() # remove legend for color with milestone , but it waste time for show and remove 
+
         ax.scatter(milestone_positions["comp_1"], milestone_positions["comp_2"], c="black", s=size_milestones)  # waypoint scatter
         # Connect waypoint scatter points into a curve
         for g in wp_segments["group"].unique():
@@ -87,6 +91,7 @@ def plot_trajectory(
                 pass
             else:
                 pass
+            
     if save is not None:
         plt.savefig(save)
     return ax
