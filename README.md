@@ -4,7 +4,7 @@
 
 ## Framework
 
-![](./docs/img/framework.png)
+![CellFateExplorer Framework](./docs/img/framework.png)
 
 ## Document
 
