@@ -450,7 +450,7 @@ class FateAnnData(ad.AnnData):
         from ._simplify_networkx_network import simplify_networkx_network as snn
         return snn(G, force_keep=force_keep, edge_points=edge_points)
 
-    def write_h5ad(self, *args, **kwargs):
+    def write_h5ad(self, save_cfe=True, *args, **kwargs):
         # if self.cfe_dict.get("milestone_wrapper", None) is not None:
         #     self.cfe_dict["milestone_wrapper"] = dict(self.cfe_dict["milestone_wrapper"])
         # if self.cfe_dict.get("waypoint_wrapper", None) is not None:
@@ -458,16 +458,17 @@ class FateAnnData(ad.AnnData):
         #     self.cfe_dict["waypoint_wrapper"]["milestone_wrapper"] = None  # milestone_wrapper is redundent
         #     waypoints = self.cfe_dict["waypoint_wrapper"]["waypoints"]
         #     self.cfe_dict["waypoint_wrapper"]["waypoints"] = waypoints.fillna("")  # "" replace None
-        trajectory_history_dict = self.trajectory_history_dict
-        for model_name, trajectory in trajectory_history_dict.items():
-            if "milestone_wrapper" in trajectory:
-                milestone_wrapper = dict(trajectory["milestone_wrapper"])
-                self.trajectory_history_dict[model_name]["milestone_wrapper"] = milestone_wrapper
-            if "waypoint_wrapper" in trajectory:
-                waypoint_wrapper = trajectory["waypoint_wrapper"]
-                waypoint_wrapper["milestone_wrapper"] = None  # milestone_wrapper is redundent
-                waypoint_wrapper["waypoints"] = waypoint_wrapper["waypoints"].fillna("")  # "" replace None
-                self.trajectory_history_dict[model_name]["waypoint_wrapper"] = milestone_wrapper
+        if save_cfe:
+            trajectory_history_dict = self.trajectory_history_dict
+            for model_name, trajectory in trajectory_history_dict.items():
+                if "milestone_wrapper" in trajectory:
+                    milestone_wrapper = dict(trajectory["milestone_wrapper"])
+                    self.trajectory_history_dict[model_name]["milestone_wrapper"] = milestone_wrapper
+                if "waypoint_wrapper" in trajectory:
+                    waypoint_wrapper = trajectory["waypoint_wrapper"]
+                    waypoint_wrapper["milestone_wrapper"] = None  # milestone_wrapper is redundent
+                    waypoint_wrapper["waypoints"] = waypoint_wrapper["waypoints"].fillna("")  # "" replace None
+                    self.trajectory_history_dict[model_name]["waypoint_wrapper"] = milestone_wrapper
 
         return super().write_h5ad(*args, **kwargs)
 
