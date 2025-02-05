@@ -2,6 +2,10 @@
 
 **Cell Fate Explorer(cfe)** is a integration platform for *inferring*, *visualizing* and *benchmarking* cell fate trajectory for single-cell RNA-seq data.
 
+## Framework
+
+![CellFateExplorer Framework](./docs/img/framework.png)
+
 ## Document
 
 For [`User`](https://cellfateexplorer-cellfateexplorer.readthedocs-hosted.com/en/latest/api/)

@@ -20,6 +20,8 @@ class CellFateExplorerConfig:
         # manually settings r_available=False for testing
         self.r_available = False
 
+        self.sns_palette = "Set3"
+
     def __getitem__(self, key):
         if hasattr(self, key):
             return getattr(self, key)

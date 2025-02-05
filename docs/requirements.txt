@@ -4,5 +4,6 @@ mkdocs-autorefs
 mkdocs-get-deps
 mkdocs-material-extensions
 mkdocs-same-dir
-mkdocstrings
-mkdocstrings-python
+mkdocstrings==0.27.0
+mkdocstrings-python==1.12.2
+mkdocs-jupyter

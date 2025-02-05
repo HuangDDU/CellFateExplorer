@@ -4,6 +4,7 @@ import yaml
 
 from .._logging import logger
 from .._settings import settings
+from ..util import random_time_string
 
 from ..data.fate_anndata import FateAnnData
 
@@ -29,6 +30,7 @@ class FateMethod():
         # logger.debug("FateMethod __init__")
         self.method_name = method_name
         self.choose_backend(backend)
+        self.id = random_time_string(f"{method_name}-{self.backend}")
 
     def choose_backend(self, backend: Optional[Literal["python_function", "cfe_docker", "dynverse_docker", None]] = None) -> None:
         """choose backend according to input backend and method_name
@@ -88,4 +90,5 @@ class FateMethod():
             parameters (dict, optional): _description_. Defaults to None.
         """
         # logger.debug("FateMethod infer_trajectory")
+        fadata.add_model_name(self.id)
         self.method_backend.run(fadata, parameters)

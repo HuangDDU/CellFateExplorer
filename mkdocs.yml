@@ -4,12 +4,28 @@ repo_name: HuangDDU/CellFateExplorer
 
 nav:
   - Home: index.md
-  - API: api.md
+  - Tutorial:
+      - Quick Start: tutorial/quickstart.ipynb
+  - API:
+      - API Summary: api.md
+      - Data:
+          - FateAnnData: api/data/fate_anndata.md
+          - MilestoneWrapper: api/data/fate_milestone_wrapper.md
+          - WaypointWrapper: api/data/fate_waypoint_wrapper.md
+
+      - Method:
+          - FateMethod: api/method/fate_method.md
+
+      - Plot:
+          - plot_trajectory: api/plot/plot_trajectory.md
   - Change log: change_log.md
 
 theme:
   name: material
   language: en
+  features:
+    # - navigation.expand
+    - navigation.tracking
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
@@ -27,6 +43,7 @@ theme:
 plugins:
   - search
   - tags
+  - mkdocs-jupyter:
   - mkdocstrings:
       default_handler: python
       handlers:
@@ -38,3 +55,6 @@ plugins:
             # show_source: false
           selection:
             docstring_style: google
+
+markdown_extensions:
+  - footnotes

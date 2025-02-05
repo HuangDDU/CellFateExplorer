@@ -8,7 +8,11 @@ import scanpy as sc
 import scvelo as scv
 
 
-def cf_paga(adata: ad.AnnData, prior_information: dict = {}, parameters: dict = {}):
+def cf_paga(
+    adata: ad.AnnData,
+    prior_information: dict = {},
+    parameters: dict = {}
+):
 
     # 1. 数据构造
     adata = adata.copy()
@@ -83,7 +87,8 @@ def cf_paga(adata: ad.AnnData, prior_information: dict = {}, parameters: dict = 
     trajectory_dict = {
         "branch_network": branch_network,
         "branches": branches,
-        "branch_progressions": branch_progressions
+        "branch_progressions": branch_progressions,
+        # "trajectory_type": "branch_network",  # TODO: 暂时直接写，后续要用方法对轨迹数据判断获得类型
     }
     return trajectory_dict
 

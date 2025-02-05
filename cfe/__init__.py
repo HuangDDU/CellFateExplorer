@@ -5,6 +5,7 @@ from . import data
 from . import method
 from . import plot
 from . import util
+from . import metric
 
 
 logo = """
@@ -26,4 +27,5 @@ __all__ = [
     "method",
     "plot",
     "util",
+    "metric"
 ]
