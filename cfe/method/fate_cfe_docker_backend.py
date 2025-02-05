@@ -39,7 +39,7 @@ class CFEDockerBackend(DockerBackend):
             parameters (dict): prior information dict
             tmp_wd (str): tmp working dir for docker mount and saving h5ad.h5, json file
         """
-        fadata.write_h5ad(f"{tmp_wd}/adata.h5ad")
+        fadata.write_h5ad(filename=f"{tmp_wd}/adata.h5ad")
 
         with open(f"{tmp_wd}/prior_information.json", "w") as f:
             json.dump(prior_information, f)
