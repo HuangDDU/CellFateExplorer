@@ -18,7 +18,8 @@ nav:
 
       - Plot:
           - plot_trajectory: api/plot/plot_trajectory.md
-  - Change log: change_log.md
+  - Trajectory Methods: trajectory_methods.md
+  - Change Log: change_log.md
 
 theme:
   name: material
@@ -43,9 +44,13 @@ theme:
 plugins:
   - search
   - tags
+  - bibtex:
+      bib_file: "docs/references.bib"
   - mkdocs-jupyter:
   - mkdocstrings:
       default_handler: python
+      ignore:
+        - '^{#refs}$'  # 忽略 {#refs}
       handlers:
         python:
           # import: cfe
@@ -55,6 +60,7 @@ plugins:
             # show_source: false
           selection:
             docstring_style: google
+
 
 markdown_extensions:
   - footnotes
