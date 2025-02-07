@@ -1,4 +1,5 @@
 # CellFateExplorer: An integrated platform for exploring cell fate
+
 [![test](https://github.com/HuangDDU/CellFateExplorer/actions/workflows/dev_branch_test.yml/badge.svg)](https://github.com/HuangDDU/CellFateExplorer/actions/workflows/dev_branch_test.yml)
 [![document](https://readthedocs.org/projects/cellfateexplorer/badge/?version=latest)](https://cellfateexplorer.readthedocs.io/en/latest/)
 
@@ -24,6 +25,15 @@
 
 You can run the [quickstart.ipynb](https://cellfateexplorer.readthedocs.io/en/latest/tutorial/quickstart/) using jupyter noboker to learn the basic function of tools quickly.
 
+## Project shedule
+
+- [x] Main framework code
+- [x] document construction: intruction, tutorial, API
+- [ ] trajectory methods module: [trajectory methods for 8 wrapper](./docs//trajectory_methods.md), comprehensive metric.
+- [ ] data module: FateAnnData data structure, data collection.
+- [ ] downstream analysis module: driver gene, GRN.
+- [ ] website module: trajectory selection and visualization based cellxgene.
+
 ## Document
 
 1. links: For [`User`](https://cellfateexplorer-cellfateexplorer.readthedocs-hosted.com/en/latest/api/), for [`Developer`](https://cellfateexplorer-cellfateexplorer.readthedocs-hosted.com/en/latest/api/)
@@ -32,5 +42,5 @@ You can run the [quickstart.ipynb](https://cellfateexplorer.readthedocs.io/en/la
 
     ```bash
     pip install -r docs/requirements.txt
-    mkdir -p docs/_build/html
+    mkdocs serve
     ```
