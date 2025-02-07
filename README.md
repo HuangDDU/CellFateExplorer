@@ -11,7 +11,7 @@
 
 ## Installation
 
-1. clone the repository and enter the directory.
+1. Clone the repository and enter the directory.
 2. Create a conda environment and install the dependencies by running the following commands.
 
     ```bash
@@ -28,17 +28,17 @@ You can run the [quickstart.ipynb](https://cellfateexplorer.readthedocs.io/en/la
 ## Project shedule
 
 - [x] Main framework code
-- [x] document construction: intruction, tutorial, API
-- [ ] trajectory methods module: [trajectory methods for 8 wrapper](./docs//trajectory_methods.md), comprehensive metric.
-- [ ] data module: FateAnnData data structure, data collection.
-- [ ] downstream analysis module: driver gene, GRN.
-- [ ] website module: trajectory selection and visualization based cellxgene.
+- [x] Document construction: intruction, tutorial, API
+- [ ] Trajectory methods module: [trajectory methods for 8 wrapper](./docs//trajectory_methods.md), comprehensive metric.
+- [ ] Data module: FateAnnData data structure, data collection.
+- [ ] Downstream analysis module: driver gene, GRN.
+- [ ] Website module: trajectory selection and visualization based cellxgene.
 
 ## Document
 
-1. links: For [`User`](https://cellfateexplorer-cellfateexplorer.readthedocs-hosted.com/en/latest/api/), for [`Developer`](https://cellfateexplorer-cellfateexplorer.readthedocs-hosted.com/en/latest/api/)
+1. Links: For [`User`](https://cellfateexplorer-cellfateexplorer.readthedocs-hosted.com/en/latest/api/), for [`Developer`](https://cellfateexplorer-cellfateexplorer.readthedocs-hosted.com/en/latest/api/)
 
-2. if you want to build the docs locally, run the following command in now conda environment.
+2. If you want to build the docs locally, run the following command in now conda environment.
 
     ```bash
     pip install -r docs/requirements.txt
