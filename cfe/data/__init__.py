@@ -1,6 +1,6 @@
 from .fate_anndata import FateAnnData, read_h5ad
-from .fate_milestone_wrapper import MilestoneWrapper
 from .fate_waypoint_wrapper import WaypointWrapper
+from .fate_milestone_wrapper import MilestoneWrapper
 from .toy import topologies_with_same_n_milestones, generate_trajectory
 
 
