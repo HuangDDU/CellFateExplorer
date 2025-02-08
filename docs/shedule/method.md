@@ -1,4 +1,4 @@
-# Trajectory Methods
+# Methods
 
 ## Backend
 

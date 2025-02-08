@@ -18,12 +18,21 @@ nav:
 
       - Plot:
           - plot_trajectory: api/plot/plot_trajectory.md
-  - Trajectory Methods: trajectory_methods.md
+  - Shedule: 
+      - Shedule Summary: shedule.md
+      - Data: shedule/data.md
+      - Method: shedule/method.md
+      - Plot: shedule/plot.md
+      - Benchmark: shedule/benchmark.md
+      - Downstream Analysis: shedule/downstream_analysis.md
+      - Website: shedule/website.md
+
   - Change Log: change_log.md
 
 theme:
   name: material
   language: en
+  custom_dir: docs/overrides/
   features:
     # - navigation.expand
     - navigation.tracking
@@ -44,6 +53,12 @@ theme:
 plugins:
   - search
   - tags
+  - git-revision-date-localized:
+      type: datetime
+      locale: zh
+  - git-committers:
+      repository: https://github.com/HuangDDU/CellFateExplorer
+      branch: dev
   - bibtex:
       bib_file: "docs/references.bib"
   - mkdocs-jupyter:

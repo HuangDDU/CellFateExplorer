@@ -20,4 +20,3 @@
 - [Tutorial](./tutorial.md)
 - [API document](./api.md)
 - [Change log](./trajectory_methods.md)
-- [Trajectory Methods](./change_log.md)

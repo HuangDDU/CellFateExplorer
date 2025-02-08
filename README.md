@@ -1,6 +1,6 @@
 # CellFateExplorer: An integrated platform for exploring cell fate
 
-[![test](https://github.com/HuangDDU/CellFateExplorer/actions/workflows/dev_branch_test.yml/badge.svg)](https://github.com/HuangDDU/CellFateExplorer/actions/workflows/dev_branch_test.yml)
+[![test](https://github.com/HuangDDU/CellFateExplorer/actions/workflows/test.yml/badge.svg)](https://github.com/HuangDDU/CellFateExplorer/actions/workflows/test.yml)
 [![document](https://readthedocs.org/projects/cellfateexplorer/badge/?version=latest)](https://cellfateexplorer.readthedocs.io/en/latest/)
 
 **Cell Fate Explorer(cfe)** is a integration platform for *inferring*, *visualizing* and *benchmarking* cell fate trajectory for single-cell RNA-seq data.
@@ -20,6 +20,7 @@
     ```
 
 3. Pypi package will be released soon.
+4. If you want to use docker container as backend, you need to install docker beforehand.
 
 ## Quick Start
 
@@ -29,10 +30,12 @@ You can run the [quickstart.ipynb](https://cellfateexplorer.readthedocs.io/en/la
 
 - [x] Main framework code
 - [x] Document construction: intruction, tutorial, API
-- [ ] Trajectory methods module: [trajectory methods for 8 wrapper](./docs//trajectory_methods.md), comprehensive metric.
-- [ ] Data module: FateAnnData data structure, data collection.
-- [ ] Downstream analysis module: driver gene, GRN.
-- [ ] Website module: trajectory selection and visualization based cellxgene.
+- [ ] [🔗](./docs/shedule/data.md)Data module: FateAnnData data structure, data collection.
+- [ ] [🔗](./docs/shedule/methods.md)Methods module: 3 backend, trajectory methods for 8 wrapper.
+- [ ] [🔗](./docs/shedule/benchmark.md)Benchmark: comprehensive metric and benchmark.
+- [ ] [🔗](./docs/shedule/plot.md)Plot: beautiful plot.
+- [ ] [🔗](./docs/shedule/downstream_analysis.md)Downstream analysis module: driver gene, GRN.
+- [ ] [🔗](./docs/shedule/website.md)Website module: trajectory method selection and result visualization based cellxgene.
 
 ## Document
 
