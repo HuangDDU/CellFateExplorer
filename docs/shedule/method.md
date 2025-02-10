@@ -1,4 +1,4 @@
-# Trajectory Methods
+# Methods
 
 ## Backend
 
@@ -16,16 +16,16 @@
 ## Implementation order (TODO List)
 
 - [ ] Dynverse represtive methods for 7 basic wrapper:
-  - [x] `Direct`: PAGA
-  - [x] `Linear`: Component 1(baseline)
-  - [ ] `Cycle`: Angle(baseline)
-  - [ ] `Prob`: SCUBA
-  - [ ] `Cluster`: GrandPrix
-  - [ ] `Proj`: MST(baseline)
-  - [ ]  `Cell`: Monocle2
+    - [x] `Direct`: PAGA
+    - [x] `Linear`: Component 1(baseline)
+    - [ ] `Cycle`: Angle(baseline)
+    - [ ] `Prob`: SCUBA
+    - [ ] `Cluster`: GrandPrix
+    - [ ] `Proj`: MST(baseline)
+    - [ ]  `Cell`: Monocle2
 - [ ] `Velocity` wrapper:
-      - [ ] Strategy from `Velocity` wrapper to `Direct` wrapper.
-      - [ ] represtive method scVelo.
+    - [ ] Strategy from `Velocity` wrapper to `Direct` wrapper.
+    - [ ] represtive method scVelo.
 - [ ] For other methods, the higher the citation count of the paper, the higher the implementation order(need statistics from google scholar).
 
 > The work integrate trajectory methods from the issue area continuously.

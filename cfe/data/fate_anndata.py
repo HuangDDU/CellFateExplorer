@@ -113,8 +113,8 @@ class FateAnnData(ad.AnnData):
         return fadata
 
     @classmethod
-    def read_dynverse_simulation_data(cls, data_filename="synthetic/dyntoy/bifurcating_1.rds", data_dir="/home/huang/RCode/scrna_tools/dynbenchmark/data"):
-        # read dynverse simulation data and create FateAnnData object
+    def read_dynverse_simulation_data(cls, data_filename="synthetic/dyntoy/bifurcating_1.rds", data_dir="/usr/share/CellFateExplorer/dynbenchmark/data/"):
+        # read dynverse simulation data and create FateAnnData object, default data dir is in /usr/share/CellFateExplorer/dynbenchmark/data/
         import rpy2.robjects as ro
         from ..util import rpy2_read  # rpy2 data structure transfer automatically
 
