@@ -23,18 +23,24 @@
     ```
 
 3. Add the now working dir into python package path.
-   - For Linux
+   - For Linux (such as working dir: /home/huang/CellFateExplorer)
 
-        ```bash
-        export PYTHONPATH="$PYTHONPATH:$(pwd)"
-        ```
+     ```bash
+     export PYTHONPATH="$PYTHONPATH:/home/haung/CellFateExplorer"
+     ```
 
-   - For Windows
+   - For Windows (such as working dir: D:\CellFateExplorer)
 
-        ```cmd
-        setx PYTHONPATH "%PYTHONPATH%;%cd%"
-        ```
-  
+     ```cmd
+     setx PYTHONPATH "%PYTHONPATH%;D:\CellFateExplorer"
+     ```
+
+   - If you use VSCode, you should create `.env` in working dir for jupyter notebook python package search as following.
+     
+     ```txt
+     PYTHONPATH=/home/haung/CellFateExplorer
+     ```
+
 4. Other installation requirements:
    - R and rpy2 are required.
    - If you want to use docker container as backend, you need to install docker beforehand.

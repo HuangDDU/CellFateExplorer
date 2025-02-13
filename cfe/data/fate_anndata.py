@@ -243,6 +243,13 @@ class FateAnnData(ad.AnnData):
                 branches=trajectory_dict["branches"],
                 branch_progressions=trajectory_dict["branch_progressions"]
             )
+        elif "milestone_emb" in trajectory_dict.keys():
+            self.add_trajectory_projection(
+                milestone_network=trajectory_dict["milestone_network"],
+                milestone_emb=trajectory_dict["milestone_emb"],
+                X_emb=trajectory_dict["X_emb"],
+                cluster_key=trajectory_dict.get("cluster_key", None)
+            )
         else:
             # defult direct output
             self.add_trajectory(**trajectory_dict)
@@ -326,7 +333,7 @@ class FateAnnData(ad.AnnData):
         directed: bool = False,
         do_scale_minmax: bool = True,
     ) -> None:
-        """add linear trajectory, such as Palantir, Cytotrace.
+        """add linear trajectory, such as Comp1, Palantir, Cytotrace.
 
         Args:
             pseudotime (list): pseudotime sequence.
@@ -359,7 +366,41 @@ class FateAnnData(ad.AnnData):
             progressions=progressions
         )
 
-    def add_trajectory_velocity():
+    def add_trajectory_projection(
+            self,
+            milestone_network: pd.DataFrame,
+            milestone_emb: pd.DataFrame | np.ndarray,
+            X_emb: pd.DataFrame | np.ndarray | str,
+            cluster_key: str = None,
+    ):
+        from ..util import project_to_segments
+
+        if type(X_emb) == str:
+            X_emb = self.obsm[X_emb]
+        if type(milestone_emb) == np.array:
+            X_emb = pd.DataFrame(X_emb, index=self.obs.index)
+
+        if cluster_key is None:
+            proj = project_to_segments(
+                x=X_emb,
+                segment_start=milestone_emb.loc[milestone_network["from"],],
+                segment_end=milestone_emb.loc[milestone_network["to"],],
+            )
+            progressions = milestone_network.iloc[proj["segment"]-1][["from", "to"]]
+            progressions["cell_id"] = self.obs.index
+            progressions["percentage"] = proj["progression"]
+            progressions = progressions[["cell_id", "from", "to", "percentage"]].reset_index(drop=True)
+        else:
+            # TODO: 给定了聚类标签，把细胞投影到所属聚类对应的线段上
+            pass
+
+        self.add_trajectory(
+            milestone_network=milestone_network,
+            divergence_regions=None,
+            progressions=progressions,
+        )
+
+    def add_trajectory_velocity(self):
         # TODO: add velocity trajectory, such as scVelo, VeloAE
         pass
 
